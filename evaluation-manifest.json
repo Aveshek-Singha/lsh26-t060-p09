@@ -59,7 +59,7 @@
     {
       "registered_name": "Aniruddha Dev Nath",
       "github_username": "arnob663",
-      "major_contribution": "Built the application: the pure due-date engine (fixed-date, time and distance rules with month-end clamping and per-vehicle daily running), the MongoDB data layer and seed, the call list and its ordering rule, service recording with the single-item reset guarantee, the dashboard, service map, contact log and email reminders, and the test suite.",
+      "major_contribution": "Sole developer. Built the entire project: the due-date engine, the data layer and seed, the call list, service recording, the dashboard, service map, contact log and email reminders, the test suite and the documentation.",
       "evidence_paths_or_commits": [
         "lib/domain/",
         "lib/db/repo.ts",
