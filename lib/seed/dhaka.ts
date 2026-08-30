@@ -58,8 +58,15 @@ export const WORKSHOP: OwnerLocation = {
  * Deterministic: the same owner always lands in the same place, so the map is
  * stable across re-seeds and a screenshot stays true.
  */
+/** Owners per neighbourhood. Three makes a round worth driving. */
+export const OWNERS_PER_AREA = 3;
+
 export function locationForOwner(index: number, houseSeed: number): OwnerLocation {
-  const area = DHAKA_AREAS[index % DHAKA_AREAS.length]!;
+  // Consecutive owners share an area. Spreading one owner per area produced as
+  // many "areas" as customers, which grouped nothing and made the round view
+  // pointless — the whole premise is that neighbours get visited together.
+  const area =
+    DHAKA_AREAS[Math.floor(index / OWNERS_PER_AREA) % DHAKA_AREAS.length]!;
   const house = (houseSeed % 60) + 1;
   const road = (houseSeed % 12) + 1;
 

@@ -88,9 +88,11 @@ function Stat({
   const toneClass =
     tone === "overdue" ? "text-overdue" : tone === "due-soon" ? "text-due-soon" : "text-hi";
   return (
-    <div className="rise rounded border border-line bg-surface px-4 py-3">
+    // flex-col with the value pushed to the bottom: a label that wraps to two
+    // lines used to shove its number out of line with the tiles beside it.
+    <div className="rise flex flex-col rounded border border-line bg-surface px-4 py-3">
       <p className="eyebrow">{label}</p>
-      <p className={`nums mt-1 text-xl font-semibold ${toneClass}`}>{value}</p>
+      <p className={`nums mt-auto pt-1 text-xl font-semibold ${toneClass}`}>{value}</p>
     </div>
   );
 }

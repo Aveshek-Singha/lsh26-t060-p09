@@ -93,13 +93,26 @@ export function ServiceMap({
         // A dot rather than Leaflet's default icon: the default pulls a PNG
         // from a relative path that does not survive bundling, and a coloured
         // dot carries the status without another asset.
-        const dot = (color: string, size: number) =>
-          L.divIcon({
+        // Shape and fill carry identity alongside colour. In the light theme
+        // --accent and --due-soon resolve to the same hex, so the workshop
+        // could not be told from a due-soon customer by colour at all; and at
+        // 14px, overdue red and due-soon amber are marginal even when they do
+        // differ. A hollow dot and a square are unambiguous at any size.
+        const pinIcon = (
+          color: string,
+          size: number,
+          shape: "solid" | "hollow" | "square",
+        ) => {
+          const radius = shape === "square" ? "3px" : "9999px";
+          const fill = shape === "hollow" ? "var(--surface)" : color;
+          const border = shape === "hollow" ? `border:3px solid ${color};` : "";
+          return L.divIcon({
             className: "",
-            html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${color};box-shadow:0 0 0 2px var(--surface),0 1px 3px rgb(0 0 0/.4)"></span>`,
+            html: `<span style="display:block;box-sizing:border-box;width:${size}px;height:${size}px;border-radius:${radius};background:${fill};${border}box-shadow:0 0 0 2px var(--surface),0 1px 3px rgb(0 0 0/.45)"></span>`,
             iconSize: [size, size],
             iconAnchor: [size / 2, size / 2],
           });
+        };
 
         const statusColor: Record<MapPin["status"], string> = {
           overdue: "var(--overdue)",
@@ -108,11 +121,16 @@ export function ServiceMap({
           no_estimate: "var(--unknown)",
         };
 
+        // Overdue is filled, everything else hollow: the urgent pins read as
+        // heavier even in greyscale or under colour-vision deficiency.
+        const statusShape = (status: MapPin["status"]) =>
+          status === "overdue" ? ("solid" as const) : ("hollow" as const);
+
         const all: Marker[] = [];
 
         for (const pin of pins) {
           const marker = L.marker([pin.lat, pin.lng], {
-            icon: dot(statusColor[pin.status], 14),
+            icon: pinIcon(statusColor[pin.status], 15, statusShape(pin.status)),
             title: pin.name,
           }).addTo(map);
 
@@ -131,7 +149,7 @@ export function ServiceMap({
 
         if (showWorkshop) {
           const workshop = L.marker([WORKSHOP.lat, WORKSHOP.lng], {
-            icon: dot("var(--accent)", 18),
+            icon: pinIcon("var(--accent)", 17, "square"),
             title: "The workshop",
             zIndexOffset: 1000,
           }).addTo(map);

@@ -26,13 +26,6 @@ export default async function ForecastPage() {
 
   const all = [...fleet.assessments.values()].flat();
   const forecast = buildForecast(all, fleet.asOf);
-  const vehicleByItem = new Map<string, string>();
-  for (const vehicle of fleet.vehicles) {
-    for (const assessment of fleet.assessments.get(vehicle.id) ?? []) {
-      vehicleByItem.set(`${vehicle.id}:${assessment.itemName}`, vehicle.plate);
-    }
-  }
-
   return (
     <>
       <PageHeading
@@ -69,10 +62,11 @@ export default async function ForecastPage() {
         <ol className="space-y-2.5">
           {forecast.weeks.map((week) => {
             const share = forecast.maxCount === 0 ? 0 : (week.count / forecast.maxCount) * 100;
-            const busiest = week.index === forecast.busiestIndex && week.count > 0;
+            // Every week at the maximum, not just the first — weeks tie.
+            const busiest = week.count === forecast.maxCount && week.count > 0;
             return (
-              <li key={week.index} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3">
-                <div className="nums text-xs text-mid">
+              <li key={week.index} className="grid grid-cols-[8.5rem_minmax(0,1fr)_auto] items-center gap-3">
+                <div className="nums whitespace-nowrap text-xs text-mid">
                   {formatDateShort(week.start)}
                   <span className="text-low"> – {formatDateShort(week.end)}</span>
                 </div>

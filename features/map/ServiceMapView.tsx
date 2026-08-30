@@ -90,9 +90,9 @@ export function ServiceMapView({ areas, pins }: { areas: AreaGroup[]; pins: MapP
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-        <Key color="var(--accent)" label="The workshop" />
-        <Key color="var(--overdue)" label="Overdue" />
-        <Key color="var(--due-soon)" label="Due soon" />
+        <Key color="var(--accent)" label="The workshop" shape="square" />
+        <Key color="var(--overdue)" label="Overdue" shape="solid" />
+        <Key color="var(--due-soon)" label="Due soon" shape="hollow" />
         <span className="text-low">
           Select a customer below to zoom to them, or click a pin directly.
         </span>
@@ -187,13 +187,27 @@ export function ServiceMapView({ areas, pins }: { areas: AreaGroup[]; pins: MapP
   );
 }
 
-function Key({ color, label }: { color: string; label: string }) {
+/** Mirrors the marker shapes exactly; a legend that does not match is worse
+    than none. */
+function Key({
+  color,
+  label,
+  shape,
+}: {
+  color: string;
+  label: string;
+  shape: "solid" | "hollow" | "square";
+}) {
   return (
     <span className="flex items-center gap-1.5">
       <span
         aria-hidden
-        className="inline-block size-2.5 rounded-full"
-        style={{ backgroundColor: color }}
+        className={`inline-block size-2.5 shrink-0 ${shape === "square" ? "rounded-sm" : "rounded-full"}`}
+        style={
+          shape === "hollow"
+            ? { backgroundColor: "var(--surface)", border: `2px solid ${color}` }
+            : { backgroundColor: color }
+        }
       />
       <span className="text-mid">{label}</span>
     </span>
