@@ -46,21 +46,26 @@
     }
   },
   "additional_features": [
+    "Route /map: a home-service map. Every customer on the call list is plotted on a real map of Dhaka and grouped by neighbourhood so a round can be planned by geography. Selecting a customer zooms to them and draws the route from the workshop with distance and drive time. Leaflet with OpenStreetMap tiles; react-leaflet was avoided because its licence is outside the permitted families.",
     "Route /dashboard: fleet health, work by rule, eight-week workload and outstanding value by item, with filters that redraw every chart and a table view of the same numbers.",
     "Route /called: the day's contact record, with undo.",
     "Email reminder: opens a prefilled Gmail draft (recipient, subject, body) and logs the owner as contacted. It never sends automatically.",
+    "Search with suggestions on the call list; search, status filters and sorting on the fleet.",
     "Record a service directly from the call list.",
     "Print stylesheet and CSV export of the day's list.",
-    "Dark and light themes, each with its own status palette, applied before first paint."
+    "Dark and light themes, each with its own status palette, applied before first paint. Light is the default."
   ],
   "team_members": [
     {
-      "registered_name": "<MEMBER NAME>",
-      "github_username": "<GITHUB USERNAME>",
-      "major_contribution": "<FILL IN BEFORE SUBMITTING>",
+      "registered_name": "Aniruddha Dev Nath",
+      "github_username": "arnob663",
+      "major_contribution": "Built the application: the pure due-date engine (fixed-date, time and distance rules with month-end clamping and per-vehicle daily running), the MongoDB data layer and seed, the call list and its ordering rule, service recording with the single-item reset guarantee, the dashboard, service map, contact log and email reminders, and the test suite.",
       "evidence_paths_or_commits": [
         "lib/domain/",
-        "app/"
+        "lib/db/repo.ts",
+        "app/",
+        "features/",
+        "tests/"
       ]
     }
   ],
@@ -80,13 +85,14 @@
     "Item costs are the expected price recorded against each item, not live quotes. The reminder message states this to the customer.",
     "A distance-based item cannot be estimated for a vehicle with fewer than two odometer readings, or one that has not moved. Those are reported as 'no estimate' rather than given a fabricated date.",
     "The service schedule per vehicle is seeded and cannot yet be edited in the interface; intervals come from the dataset.",
-    "The inline forms have no exit animation - they appear with a transition and close instantly."
+    "The inline forms have no exit animation - they appear with a transition and close instantly.",
+    "The road route on the service map comes from a public OSRM demo endpoint. When it does not answer, the app falls back to its own straight-line distance and labels it as an estimate rather than presenting it as a measurement."
   ],
   "ai_tools_used": [
     {
-      "tool": "<TOOL NAME>",
-      "used_for": "<FILL IN BEFORE SUBMITTING>",
-      "how_output_was_verified": "76 unit tests over the pure due-date engine, 44 end-to-end tests covering one block per required feature, and `npm run verify:reset` which checks the single-item reset constraint against the live database. The engine's output was additionally cross-checked against an independent model of the published dataset: both report 45 overdue and 34 due-soon items and 809,300 BDT of outstanding work."
+      "tool": "Claude Code",
+      "used_for": "Implementation throughout: the due-date engine, the data layer and seed, the interface, the test suite and the documentation. Also used to analyse the published dataset before any code was written, which is where the month-end clamping requirement and the 'today is a case field, not the clock' constraint were identified.",
+      "how_output_was_verified": "86 unit tests over the pure engine, 51 end-to-end tests covering one block per required feature, and `npm run verify:reset`, which checks the single-item reset constraint against the live database for all three rule types. The engine's output was cross-checked against an independent model of the published dataset written separately: both report the same overdue and due-soon counts and the same total outstanding value. Interface work was reviewed against screenshots of the running application, which is how several defects were caught that no test covered - a chart rendering its numbers with no bars, a map legend showing three labels for two colours, and mobile layout overflow."
     }
   ],
   "licenses_file": "LICENSES.md",
