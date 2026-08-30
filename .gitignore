@@ -33,3 +33,37 @@ logs/
 # Misc
 *.bak
 *.tmp
+
+# Secrets — belt and braces. `.env` alone does NOT match
+# `atlas-credentials.env`, which is why these patterns exist.
+*.env
+.env.*
+*credential*
+
+# Next.js
+.next/
+next-env.d.ts
+.vercel
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Local working files — deliberately NOT shipped in the judged repo.
+# Internal planning/strategy notes and the raw 1.8 MB organiser dataset.
+# The app seeds from the small extract in data/ instead.
+PLAN.md
+lofistack_hackathon_ai_agent_context_modified.md
+P09_vehicle_service_public.json
+scratch/
+notes/
+
+# AI assistant / agent configuration — not part of the deliverable
+CLAUDE.md
+AGENTS.md
+.claude/
+.cursor/
+.aider*
