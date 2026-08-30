@@ -33,10 +33,13 @@ export const metadata: Metadata = {
 const themeScript = `
 (function () {
   try {
-    var stored = localStorage.getItem("theme");
-    var dark = stored ? stored === "dark"
-      : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.classList.toggle("dark", dark);
+    // Light is the product's default. Dark is opt-in and remembered, rather
+    // than following the operating system: a workshop screen in daylight
+    // should not open dark because someone's laptop is set that way.
+    document.documentElement.classList.toggle(
+      "dark",
+      localStorage.getItem("theme") === "dark",
+    );
   } catch (e) {}
 })();
 `;

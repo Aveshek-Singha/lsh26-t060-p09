@@ -48,8 +48,8 @@ export function CallRow({
       // `transition-colors` alone excludes opacity, so marking an owner called
       // snapped the row to dim. Naming opacity lets the state change read.
       className={`relative rounded border border-line bg-surface transition-[color,background-color,border-color,opacity] duration-200 ease-out hover:border-line-strong ${
-        isOverdue && !called ? "hazard" : ""
-      } ${called ? "opacity-55" : ""}`}
+        called ? "opacity-55" : ""
+      }`}
       data-owner={owner?.id ?? "unknown"}
       data-score={priority.score}
       data-called={called ? "yes" : "no"}

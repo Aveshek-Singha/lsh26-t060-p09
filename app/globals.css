@@ -153,32 +153,6 @@ body {
   color: var(--text-low);
 }
 
-/* Hazard stripe: the visual cue for overdue work, borrowed from the workshop
-   floor.
-   Thin pinstripes rather than wide bands, and confined to a band down the left
-   edge instead of running under the whole card. Wide stripes across the full
-   width competed with the text — the row has to stay readable first and signal
-   second. The status spine carries most of the signal anyway.
-   Painted as a background, so it always sits under the content. */
-.hazard {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    color-mix(in oklab, var(--overdue) var(--hazard-strength, 12%), transparent) 0 1.5px,
-    transparent 1.5px 10px
-  );
-  background-repeat: no-repeat;
-  background-size: 180px 100%;
-}
-
-:root {
-  /* Warm paper takes tint far more readily than oil-black does. */
-  --hazard-strength: 13%;
-}
-
-.dark {
-  --hazard-strength: 22%;
-}
-
 /* ---------------------------------------------------------------- motion
    Two named curves, used by everything below. The built-in `ease-out` is too
    weak to read as deliberate at UI durations, so both are the strong variants.
@@ -380,8 +354,6 @@ details[open]::details-content {
   main { max-width: none !important; padding: 0 !important; }
 
   li { break-inside: avoid; page-break-inside: avoid; }
-
-  .hazard { background-image: none !important; }
 
   a { text-decoration: none !important; color: #000 !important; }
 
