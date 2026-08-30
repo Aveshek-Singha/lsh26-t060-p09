@@ -11,7 +11,6 @@
   "live_url_note": "To be filled in before submission.",
   "commit_sha": null,
   "commit_sha_note": "Full 40-character SHA of the submitted state, filled in at submission time.",
-
   "stack": {
     "framework": "Next.js 16.3.3 (App Router)",
     "language": "TypeScript 5.9",
@@ -20,14 +19,11 @@
     "hosting": "Vercel",
     "authentication": "none — no required feature involves user accounts, so no login gates any functionality"
   },
-
   "setup_required_by_judge": "None. The live URL opens directly on the call list with the fleet already seeded.",
-
   "working_date": {
     "value": "2026-08-30",
     "explanation": "The published dataset states that 'today' is a field of the case and never the clock, so the application stores a working date rather than reading the system time. It is shown in the header and can be changed there; every due date and status recalculates from it."
   },
-
   "required_features": [
     {
       "id": "MVP-1",
@@ -41,7 +37,12 @@
       "evidence": {
         "route": "/vehicles",
         "api": "/api/health",
-        "counts": { "vehicles": 42, "owners": 27, "service_items": 165, "history_records": 99 },
+        "counts": {
+          "vehicles": 42,
+          "owners": 27,
+          "service_items": 165,
+          "history_records": 99
+        },
         "data_source": "Case PUB-01 of the organisers' published P09 dataset, loaded unmodified."
       }
     },
@@ -65,7 +66,9 @@
         "fine": "more than 30 days away",
         "no_estimate": "shown when a rate cannot honestly be derived, e.g. fewer than two odometer readings or a vehicle that has not moved — no date is fabricated"
       },
-      "evidence": { "route": "/vehicles/V01" }
+      "evidence": {
+        "route": "/vehicles/V01"
+      }
     },
     {
       "id": "MVP-3",
@@ -74,14 +77,18 @@
       "verify": {
         "given": "The seeded fleet on 2026-08-30.",
         "when": "Open / (the home page).",
-        "expected": "Owners needing a call are listed highest priority first, each with the owner name, a tap-to-dial phone number, the vehicle, and every due item with its own stated reason and cost. Scores decrease down the list. Expand 'How this list is ordered' to read the rule; each row prints its own arithmetic."
+        "expected": "Owners needing a call are listed highest priority first, one row per owner, each with the owner name, a tap-to-dial phone number, every vehicle of theirs needing attention, and each due item with its own stated reason and cost. Scores decrease down the list. Expand 'How this list is ordered' to read the rule; each row prints its own arithmetic."
       },
       "sort_rule": {
         "formula": "score = clamp(days overdue of the worst item, -30, 180) + min(total value of due work in thousands of taka, 40)",
         "rationale": "Urgency leads and money breaks ties. The value term is capped at 40 points so an expensive job can never outrank a badly overdue safety item; the urgency term is floored at -30 so vehicles that are merely due soon still sort sensibly against each other.",
-        "stated_in_ui": true
+        "stated_in_ui": true,
+        "unit": "The list is keyed by owner, not vehicle: the workshop rings a person, so an owner with three vehicles is one call with three things to discuss. Their score is computed over the union of their vehicles' due items. In the seeded fleet this turns 41 vehicle rows into 27 calls."
       },
-      "evidence": { "route": "/", "explainer": "Expand 'How this list is ordered' on the home page." }
+      "evidence": {
+        "route": "/",
+        "explainer": "Expand 'How this list is ordered' on the home page."
+      }
     },
     {
       "id": "MVP-4",
@@ -97,10 +104,14 @@
         "how": "The history row is tagged with the item name so only that item's next-due calculation moves. Fixed-date renewals additionally use a MongoDB arrayFilters update targeting exactly one array element; the plain positional operator would only ever match the first entry.",
         "automated_check": "npm run verify:reset — snapshots every item's computed due date, records one service, and asserts all siblings are byte-identical. Runs against the live database for all three rule types."
       },
-      "evidence": { "routes": ["/vehicles/V01", "/owners/O01"] }
+      "evidence": {
+        "routes": [
+          "/vehicles/V01",
+          "/owners/O01"
+        ]
+      }
     }
   ],
-
   "bonus_features": [
     {
       "requirement": "Show how much work is coming in the next 8 weeks so the workshop can see busy weeks in advance.",
@@ -121,7 +132,6 @@
       "note": "Plain text so it survives being pasted into SMS or WhatsApp. Grouped by vehicle, each item with days overdue and cost, ending with an estimated total."
     }
   ],
-
   "constraints": [
     {
       "constraint": "Distance based items must use the vehicle's daily running. A fixed interval for everything will not score.",
@@ -139,7 +149,6 @@
       "evidence": "The formula is stated on the page in words and symbols, and every row prints its own arithmetic so any position can be checked by hand."
     }
   ],
-
   "edge_cases_handled": [
     "Month-end clamping: 31 Jan + 1 month resolves to 28 Feb rather than overflowing into March. 113 records in the source data fall on the 29th-31st.",
     "Dates are handled as YYYY-MM-DD strings with dedicated arithmetic, avoiding the UTC-parsing day shift of new Date('2026-08-30').",
@@ -153,21 +162,30 @@
     "Fixed-date items require an explicit new expiry on renewal, since they do not renew on an interval.",
     "Owner names are not unique in the data, so records are keyed by id and the phone number disambiguates.",
     "Unknown vehicle or owner ids return 404; a database outage renders an explanatory panel with retry guidance rather than a blank page.",
-    "Empty, loading, success and error states are present throughout; nothing fails silently."
+    "Empty, loading, success and error states are present throughout; nothing fails silently.",
+    "Owner names are not unique, so the call list groups by owner id rather than name; two different owners sharing a name remain two separate calls."
   ],
-
   "testing": {
-    "unit_tests": { "count": 52, "command": "npm test", "covers": "The pure due-date engine: month clamping, zero and negative rates, single-reading vehicles, targets already passed, exact status boundaries, money round-trips, and the ordering rule including its caps." },
-    "e2e_tests": { "count": 18, "command": "npm run test:e2e", "covers": "One block per required feature, plus the odometer flow, both themes, a 375px viewport, and a missing vehicle returning 404." },
-    "constraint_check": { "command": "npm run verify:reset", "covers": "Single-item reset against the live database for all three rule types." }
+    "unit_tests": {
+      "count": 55,
+      "command": "npm test",
+      "covers": "The pure due-date engine: month clamping, zero and negative rates, single-reading vehicles, targets already passed, exact status boundaries, money round-trips, and the ordering rule including its caps."
+    },
+    "e2e_tests": {
+      "count": 19,
+      "command": "npm run test:e2e",
+      "covers": "One block per required feature, plus the odometer flow, both themes, a 375px viewport, and a missing vehicle returning 404."
+    },
+    "constraint_check": {
+      "command": "npm run verify:reset",
+      "covers": "Single-item reset against the live database for all three rule types."
+    }
   },
-
   "accessibility_and_responsive": {
     "themes": "Dark and light, each with its own status palette so contrast holds in both. Theme is applied before first paint, so there is no flash on load.",
     "narrow_screen": "Usable at 375px with no horizontal scroll; an end-to-end test asserts this.",
     "status_encoding": "Status is carried by text label as well as colour, so it does not depend on colour vision."
   },
-
   "mocked": {
     "anything_mocked": false,
     "explanation": "Every figure on screen is computed from data in MongoDB and every write goes to the database. Two clarifications: the fleet is seeded sample data (case PUB-01 of the organisers' dataset, with synthetic names and plates), and item costs are the expected price recorded against each item rather than live quotes — the reminder message states this to the customer."

@@ -29,6 +29,8 @@ export default async function CallListPage() {
   const totals = totalsFor(fleet);
   const callList = callListFor(fleet);
   const totalValue = sumPaisa(callList.map((entry) => entry.priority.totalCostPaisa));
+  // One owner can hold several vehicles, so these two counts differ.
+  const vehiclesOnList = callList.reduce((sum, entry) => sum + entry.vehicles.length, 0);
 
   return (
     <>
@@ -49,7 +51,7 @@ export default async function CallListPage() {
       >
         <Stat label="Overdue items" value={totals.overdue} tone="overdue" />
         <Stat label="Due within 30 days" value={totals.dueSoon} tone="due-soon" />
-        <Stat label="Vehicles to call" value={totals.vehiclesNeedingAction} />
+        <Stat label="Calls to make" value={callList.length} />
         <Stat label="Value of work" value={formatBdt(totalValue)} />
       </section>
 
@@ -69,13 +71,16 @@ export default async function CallListPage() {
         <>
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-hi">
-              {callList.length} {callList.length === 1 ? "vehicle" : "vehicles"} to call
+              {callList.length} {callList.length === 1 ? "owner" : "owners"} to call
+              <span className="ml-2 font-normal text-low">
+                {vehiclesOnList} {vehiclesOnList === 1 ? "vehicle" : "vehicles"}
+              </span>
             </h2>
             <p className="text-xs text-low">Highest priority first</p>
           </div>
           <ol className="stagger space-y-3">
             {callList.map((entry, index) => (
-              <CallRow key={entry.vehicle.id} entry={entry} rank={index + 1} />
+              <CallRow key={entry.key} entry={entry} rank={index + 1} />
             ))}
           </ol>
         </>

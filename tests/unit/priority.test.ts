@@ -83,13 +83,18 @@ describe("buildCallList", () => {
     serviceHistory: [],
   });
 
-  const owner: Owner = { id: "O01", name: "Salma Ahmed", phone: "01481704039" };
+  const salma: Owner = { id: "O01", name: "Salma Ahmed", phone: "01481704039" };
+  const habib: Owner = { id: "O02", name: "Habib Ali", phone: "01458378733" };
+  const owners = new Map([
+    [salma.id, salma],
+    [habib.id, habib],
+  ]);
 
-  it("orders by score and leaves out vehicles with nothing due", () => {
+  it("orders by score and leaves out owners with nothing due", () => {
     const vehicles = [
-      vehicle("V01", "Ga 12-3456"),
-      vehicle("V02", "Cha 76-9961"),
-      vehicle("V03", "Kha 45-1122"),
+      vehicle("V01", "Ga 12-3456", "O01"),
+      vehicle("V02", "Cha 76-9961", "O02"),
+      vehicle("V03", "Kha 45-1122", "O02"),
     ];
     const assessments = new Map<string, DueAssessment[]>([
       ["V01", [due(5, 100_000)]],
@@ -97,11 +102,60 @@ describe("buildCallList", () => {
       ["V03", [{ ...due(400, 0), status: "fine" }]],
     ]);
 
-    const list = buildCallList(vehicles, assessments, new Map([[owner.id, owner]]));
+    const list = buildCallList(vehicles, assessments, owners);
 
-    expect(list.map((e) => e.vehicle.id)).toEqual(["V02", "V01"]);
+    expect(list.map((e) => e.owner?.name)).toEqual(["Habib Ali", "Salma Ahmed"]);
     expect(list[0]!.priority.score).toBe(138);
-    expect(list[0]!.owner?.name).toBe("Salma Ahmed");
+  });
+
+  // The workshop rings a person, not a vehicle. An owner with three vehicles
+  // must appear once, or they get called three times.
+  it("groups an owner's vehicles into a single call", () => {
+    const vehicles = [
+      vehicle("V01", "Ga 11-1111", "O01"),
+      vehicle("V02", "Ga 22-2222", "O01"),
+      vehicle("V03", "Ga 33-3333", "O01"),
+    ];
+    const assessments = new Map<string, DueAssessment[]>([
+      ["V01", [due(-10, 100_000, "Engine oil")]],
+      ["V02", [due(-40, 200_000, "Brake pads")]],
+      ["V03", [due(5, 300_000, "Insurance")]],
+    ]);
+
+    const list = buildCallList(vehicles, assessments, owners);
+
+    expect(list).toHaveLength(1);
+    expect(list[0]!.vehicles).toHaveLength(3);
+    // Urgency comes from the worst item anywhere in the call...
+    expect(list[0]!.priority.worstDaysOverdue).toBe(40);
+    // ...and the value is the whole trip's worth of work.
+    expect(list[0]!.priority.totalCostPaisa).toBe(600_000);
+    expect(list[0]!.actionable).toHaveLength(3);
+  });
+
+  it("puts the owner's worst vehicle first within the call", () => {
+    const vehicles = [
+      vehicle("V01", "Ga 11-1111", "O01"),
+      vehicle("V02", "Ga 22-2222", "O01"),
+    ];
+    const assessments = new Map<string, DueAssessment[]>([
+      ["V01", [due(2, 100_000)]],
+      ["V02", [due(-90, 100_000)]],
+    ]);
+
+    const list = buildCallList(vehicles, assessments, owners);
+    expect(list[0]!.vehicles.map((v) => v.vehicle.id)).toEqual(["V02", "V01"]);
+  });
+
+  it("sorts the call's items with the most urgent first", () => {
+    const vehicles = [vehicle("V01", "Ga 11-1111"), vehicle("V02", "Ga 22-2222")];
+    const assessments = new Map<string, DueAssessment[]>([
+      ["V01", [due(10, 100_000, "Insurance")]],
+      ["V02", [due(-60, 100_000, "Brake pads")]],
+    ]);
+
+    const list = buildCallList(vehicles, assessments, owners);
+    expect(list[0]!.actionable.map((i) => i.itemName)).toEqual(["Brake pads", "Insurance"]);
   });
 
   it("keeps a vehicle whose owner record is missing rather than dropping it", () => {
@@ -112,6 +166,7 @@ describe("buildCallList", () => {
     );
     expect(list).toHaveLength(1);
     expect(list[0]!.owner).toBeNull();
+    expect(list[0]!.key).toBe("MISSING");
   });
 
   it("returns an empty list when the whole fleet is fine", () => {
@@ -124,8 +179,9 @@ describe("buildCallList", () => {
   });
 
   it("breaks score ties deterministically", () => {
-    const a = { vehicle: vehicle("V01", "Aa 11-1111"), owner: null, actionable: [], priority: scoreActionable([due(-10, 100_000)]) };
-    const b = { vehicle: vehicle("V02", "Bb 22-2222"), owner: null, actionable: [], priority: scoreActionable([due(-10, 100_000)]) };
+    const base = { owner: null, vehicles: [], actionable: [] };
+    const a = { ...base, key: "O01", priority: scoreActionable([due(-10, 100_000)]) };
+    const b = { ...base, key: "O02", priority: scoreActionable([due(-10, 100_000)]) };
     expect(byPriority(a, b)).toBeLessThan(0);
     expect(byPriority(b, a)).toBeGreaterThan(0);
   });

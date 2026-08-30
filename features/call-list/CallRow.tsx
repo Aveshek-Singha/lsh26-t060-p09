@@ -6,13 +6,14 @@ import type { CallListEntry } from "@/lib/domain/priority";
 import { StatusBadge } from "@/features/ui/StatusBadge";
 
 /**
- * One vehicle on the call list.
+ * One phone call.
  *
- * Answers the four questions the workshop actually has: who to ring, about
- * which vehicle, what is due, and why it is this high up the list.
+ * Keyed by owner rather than by vehicle, because the workshop rings a person:
+ * an owner with three vehicles is one call with three things to discuss, not
+ * three separate calls. Their vehicles nest underneath.
  */
 export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number }) {
-  const { vehicle, owner, actionable, priority } = entry;
+  const { owner, vehicles, actionable, priority } = entry;
   const worst = actionable[0]!;
   const isOverdue = worst.status === "overdue";
 
@@ -21,8 +22,10 @@ export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number })
       className={`relative rounded border border-line bg-surface transition-colors hover:border-line-strong ${
         isOverdue ? "hazard" : ""
       }`}
+      data-owner={owner?.id ?? "unknown"}
+      data-score={priority.score}
     >
-      {/* Status spine: a glanceable colour edge down the left of each row. */}
+      {/* Status spine: a glanceable colour edge down the left of each call. */}
       <span
         aria-hidden
         className={`absolute inset-y-0 left-0 w-1 rounded-l ${
@@ -40,52 +43,70 @@ export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number })
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <StatusBadge status={worst.status} />
-            <Link
-              href={`/vehicles/${vehicle.id}`}
-              className="plate truncate text-sm font-semibold text-hi underline-offset-4 hover:underline"
-            >
-              {vehicle.plate}
-            </Link>
-            <span className="truncate text-xs text-low">{vehicle.model}</span>
-          </div>
-
-          <p className="mt-2 text-sm text-hi">
-            Call{" "}
-            <span className="font-semibold">{owner?.name ?? "unknown owner"}</span>
-            {owner && (
+            {owner ? (
               <>
-                {" · "}
+                <Link
+                  href={`/owners/${owner.id}`}
+                  className="text-sm font-semibold text-hi underline-offset-4 hover:underline"
+                >
+                  {owner.name}
+                </Link>
                 <a
                   href={`tel:${owner.phone}`}
-                  className="nums text-accent underline-offset-4 hover:underline"
+                  className="nums text-xs text-accent underline-offset-4 hover:underline"
                 >
                   {owner.phone}
                 </a>
               </>
+            ) : (
+              <span className="text-sm font-semibold text-low">Unknown owner</span>
             )}
-          </p>
+            <span className="text-xs text-low">
+              {vehicles.length === 1
+                ? "1 vehicle"
+                : `${vehicles.length} vehicles · one call`}
+            </span>
+          </div>
 
-          <ul className="mt-3 space-y-1.5">
-            {actionable.map((item) => (
-              <li
-                key={item.itemName}
-                className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs"
-              >
-                <span className="font-medium text-hi">{item.itemName}</span>
-                <span
-                  className={`nums ${item.status === "overdue" ? "text-overdue" : "text-due-soon"}`}
-                >
-                  {formatDayOffset(item.daysUntilDue ?? 0)}
-                </span>
-                <span className="text-low">
-                  ({item.dueDate ? formatDate(item.dueDate) : "no date"})
-                </span>
-                <span className="nums ml-auto text-mid">{formatBdt(item.costPaisa)}</span>
-                {/* The reason, verbatim from the engine that produced the date. */}
-                <span className="w-full text-low">{item.basis}</span>
-              </li>
+          <div className="mt-3 space-y-3">
+            {vehicles.map(({ vehicle, actionable: items }) => (
+              <div key={vehicle.id} className="border-l-2 border-line pl-3">
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <Link
+                    href={`/vehicles/${vehicle.id}`}
+                    className="plate truncate text-xs font-semibold text-hi underline-offset-4 hover:underline"
+                  >
+                    {vehicle.plate}
+                  </Link>
+                  <span className="truncate text-[0.6875rem] text-low">{vehicle.model}</span>
+                </div>
+
+                <ul className="mt-1.5 space-y-1.5">
+                  {items.map((item) => (
+                    <li
+                      key={item.itemName}
+                      className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs"
+                    >
+                      <span className="font-medium text-hi">{item.itemName}</span>
+                      <span
+                        className={`nums ${
+                          item.status === "overdue" ? "text-overdue" : "text-due-soon"
+                        }`}
+                      >
+                        {formatDayOffset(item.daysUntilDue ?? 0)}
+                      </span>
+                      <span className="text-low">
+                        ({item.dueDate ? formatDate(item.dueDate) : "no date"})
+                      </span>
+                      <span className="nums ml-auto text-mid">{formatBdt(item.costPaisa)}</span>
+                      {/* The reason, verbatim from the engine that produced the date. */}
+                      <span className="w-full text-low">{item.basis}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-4 border-t border-line pt-3 sm:block sm:border-0 sm:pt-0 sm:text-right">
@@ -97,6 +118,9 @@ export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number })
             <p className="nums text-xs text-mid">{formatBdt(priority.totalCostPaisa)} of work</p>
             <p className="nums mt-0.5 text-[0.6875rem] text-low">
               {priority.urgencyPoints} urgency + {priority.valuePoints} value
+            </p>
+            <p className="nums mt-0.5 text-[0.6875rem] text-low">
+              {actionable.length} {actionable.length === 1 ? "item" : "items"}
             </p>
           </div>
         </div>

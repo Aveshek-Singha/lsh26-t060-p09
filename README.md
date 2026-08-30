@@ -32,7 +32,8 @@ to go`, or `Last done 26 Feb 2026 + 6 months`. Nothing is a black box.
       estimated from that vehicle's daily running. Every item is marked overdue,
       due soon or fine.
 - [x] **3. A daily call list.** Which owner to ring, about which vehicle, which items
-      are due and why — ordered by a stated rule, explained on the page.
+      are due and why — ordered by a stated rule, explained on the page. The list is
+      keyed by **owner**, so someone with three vehicles is one call, not three.
 - [x] **4. A vehicle page per owner, and recording a service.** Every item with its next
       due date and cost. Recording a completed service resets that one item and grows
       the service history.
@@ -57,6 +58,12 @@ Urgency leads; money breaks ties. The value term is capped at 40 points so an
 expensive job can never outrank a badly overdue safety item — brakes before
 bodywork. Each row prints its own arithmetic, so any position in the list can be
 checked by hand.
+
+The unit of the list is the **owner**, not the vehicle: the workshop rings a
+person. An owner's score is computed over the union of their vehicles' due
+items, so three vehicles each a little overdue can outrank one vehicle that is
+slightly worse — which is right, because it is a single trip to the workshop.
+In the seeded fleet this turns 41 vehicle rows into 27 calls.
 
 ## How distance items are estimated
 

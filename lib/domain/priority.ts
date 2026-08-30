@@ -1,6 +1,10 @@
 /**
  * Call-list ordering.
  *
+ * The list is keyed by **owner**, not by vehicle: an owner with three vehicles
+ * is one phone call, not three. The workshop rings a person, so the person is
+ * the unit of work; their vehicles nest underneath.
+ *
  * The brief requires a sort rule that can be explained, not just "everything
  * that isn't fine". The rule is:
  *
@@ -34,10 +38,21 @@ export interface PriorityBreakdown {
   score: number;
 }
 
-export interface CallListEntry {
+/** One vehicle's worth of work inside a call. */
+export interface CallVehicle {
   vehicle: Vehicle;
-  owner: Owner | null;
   /** Overdue and due-soon items only, most urgent first. */
+  actionable: DueAssessment[];
+  priority: PriorityBreakdown;
+}
+
+/** One phone call: one owner, and every vehicle of theirs needing attention. */
+export interface CallListEntry {
+  owner: Owner | null;
+  /** Stable key even when the owner record is missing. */
+  key: string;
+  vehicles: CallVehicle[];
+  /** All actionable items across every vehicle, most urgent first. */
   actionable: DueAssessment[];
   priority: PriorityBreakdown;
 }
@@ -83,24 +98,45 @@ export function scoreActionable(actionable: readonly DueAssessment[]): PriorityB
 }
 
 /**
- * Build the call list: one entry per vehicle with work to do, highest score
- * first. Vehicles with nothing actionable are left out entirely.
+ * Build the call list: one entry per owner with work outstanding, highest score
+ * first. Owners with nothing actionable are left out entirely.
+ *
+ * The owner's score is computed over the union of their vehicles' due items, so
+ * three vehicles each a little overdue can legitimately outrank one vehicle
+ * that is slightly worse — which is the right call when it is a single trip to
+ * the workshop.
  */
 export function buildCallList(
   vehicles: readonly Vehicle[],
   assessmentsByVehicleId: ReadonlyMap<string, DueAssessment[]>,
   ownersById: ReadonlyMap<string, Owner>,
 ): CallListEntry[] {
-  const entries: CallListEntry[] = [];
+  const byOwner = new Map<string, CallVehicle[]>();
 
   for (const vehicle of vehicles) {
     const assessments = assessmentsByVehicleId.get(vehicle.id) ?? [];
     const actionable = assessments.filter(isActionable);
     if (actionable.length === 0) continue;
 
+    const existing = byOwner.get(vehicle.ownerId) ?? [];
+    existing.push({ vehicle, actionable, priority: scoreActionable(actionable) });
+    byOwner.set(vehicle.ownerId, existing);
+  }
+
+  const entries: CallListEntry[] = [];
+
+  for (const [ownerId, callVehicles] of byOwner) {
+    // Worst vehicle first within the call, so the reason for ringing leads.
+    callVehicles.sort((a, b) => b.priority.score - a.priority.score);
+
+    const actionable = callVehicles
+      .flatMap((entry) => entry.actionable)
+      .sort((a, b) => (a.daysUntilDue ?? 0) - (b.daysUntilDue ?? 0));
+
     entries.push({
-      vehicle,
-      owner: ownersById.get(vehicle.ownerId) ?? null,
+      owner: ownersById.get(ownerId) ?? null,
+      key: ownerId,
+      vehicles: callVehicles,
       actionable,
       priority: scoreActionable(actionable),
     });
@@ -117,7 +153,7 @@ export function byPriority(a: CallListEntry, b: CallListEntry): number {
   if (b.priority.totalCostPaisa !== a.priority.totalCostPaisa) {
     return b.priority.totalCostPaisa - a.priority.totalCostPaisa;
   }
-  return a.vehicle.plate.localeCompare(b.vehicle.plate);
+  return a.key.localeCompare(b.key);
 }
 
 /** One-line explanation of a row's score, e.g. "266d overdue → 180 + ৳18,000 → 18". */

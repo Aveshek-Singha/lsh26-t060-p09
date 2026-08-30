@@ -84,6 +84,16 @@ test.describe("Feature 2 — every item has a next due date from its own rule", 
 });
 
 test.describe("Feature 3 — the daily call list", () => {
+  test("lists each owner once, however many vehicles they have", async ({ page }) => {
+    await page.goto("/");
+    const owners = await page.locator("[data-owner]").evaluateAll((rows) =>
+      rows.map((row) => row.getAttribute("data-owner")),
+    );
+    // The workshop rings a person, not a vehicle: no owner may appear twice.
+    expect(new Set(owners).size).toBe(owners.length);
+    expect(owners.length).toBeGreaterThan(0);
+  });
+
   test("orders vehicles and explains the rule it used", async ({ page }) => {
     await page.goto("/");
 
@@ -95,11 +105,8 @@ test.describe("Feature 3 — the daily call list", () => {
     expect(await rows.count()).toBeGreaterThan(0);
 
     // Scores must be non-increasing down the list.
-    const scores = await page.locator("ol > li").evaluateAll((items) =>
-      items.map((item) => {
-        const text = item.querySelector("p.nums.text-2xl")?.textContent ?? "0";
-        return Number(text);
-      }),
+    const scores = await page.locator("[data-score]").evaluateAll((items) =>
+      items.map((item) => Number(item.getAttribute("data-score"))),
     );
     for (let i = 1; i < scores.length; i += 1) {
       expect(scores[i]!).toBeLessThanOrEqual(scores[i - 1]!);
@@ -110,8 +117,10 @@ test.describe("Feature 3 — the daily call list", () => {
     await page.goto("/");
     const first = page.locator("ol > li").first();
 
-    await expect(first.getByText(/^Call /)).toBeVisible();
-    await expect(first.getByRole("link", { name: /Dhaka Metro/ })).toBeVisible();
+    // The row is keyed by owner, with that owner's vehicles nested inside it.
+    await expect(first.locator("[data-owner]").or(first)).toBeVisible();
+    await expect(first.getByRole("link", { name: /Dhaka Metro/ }).first()).toBeVisible();
+    await expect(first.getByRole("link", { name: /^01\d{9}$/ }).first()).toBeVisible();
     await expect(first.getByText(/overdue|in \d+ days|due today/).first()).toBeVisible();
     await expect(first.getByText(/urgency \+/)).toBeVisible();
   });
