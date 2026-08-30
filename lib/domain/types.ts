@@ -40,6 +40,20 @@ export interface ServiceRecord {
   costPaisa: number;
 }
 
+/**
+ * Where a vehicle's owner is, for home service.
+ *
+ * Real Dhaka areas at their real coordinates, but area centroids rather than
+ * surveyed street addresses — demo data of the same character as the synthetic
+ * names it belongs to.
+ */
+export interface OwnerLocation {
+  area: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
 export interface Owner {
   id: string;
   name: string;
@@ -56,6 +70,8 @@ export interface Owner {
    * moving the working date forward correctly makes yesterday's calls due again.
    */
   lastCalledOn?: CivilDate;
+  /** Home-service address. Absent on owners seeded before this was added. */
+  location?: OwnerLocation;
 }
 
 export interface Vehicle {

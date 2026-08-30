@@ -2,6 +2,7 @@ import type { Collection } from "mongodb";
 import { getDb } from "./client";
 import type {
   CivilDate,
+  OwnerLocation,
   OdometerReading,
   ServiceItem,
   ServiceRecord,
@@ -27,6 +28,8 @@ export interface OwnerDoc {
   email?: string;
   /** Working date this owner was last called on, if ever. */
   lastCalledOn?: CivilDate;
+  /** Home-service address for the map. */
+  location?: OwnerLocation;
 }
 
 export interface VehicleDoc {

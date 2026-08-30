@@ -13,6 +13,7 @@ installed from the public registry, not vendored into this repository.
 | react-dom | 19.2.8 | React DOM renderer | MIT | https://github.com/facebook/react |
 | mongodb | 7.6.0 | Official MongoDB Node.js driver | Apache-2.0 | https://github.com/mongodb/node-mongodb-native |
 | zod | 4.5.4 | Runtime validation of server-action input | MIT | https://github.com/colinhacks/zod |
+| leaflet | 1.9.4 | Map rendering for the home-service view | BSD-2-Clause | https://github.com/Leaflet/Leaflet |
 | server-only | 0.0.1 | Build-time guard against importing server code into a client bundle | MIT | https://github.com/vercel/next.js |
 
 ## Development dependencies
@@ -28,6 +29,7 @@ installed from the public registry, not vendored into this repository.
 | @types/node | 24.13.3 | Node type definitions | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/react | 19.2.18 | React type definitions | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 | @types/react-dom | 19.2.5 | React DOM type definitions | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
+| @types/leaflet | 1.9.22 | Leaflet type definitions | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped |
 
 ## Fonts
 
@@ -39,6 +41,21 @@ No external font CDN is contacted at runtime.
 | Archivo | Headings and interface text | SIL Open Font License 1.1 | https://fonts.google.com/specimen/Archivo |
 | IBM Plex Mono | Number plates, odometer readings, money, day counts | SIL Open Font License 1.1 | https://fonts.google.com/specimen/IBM+Plex+Mono |
 
+## Services used at runtime
+
+| Service | Purpose | Terms | Notes |
+|---|---|---|---|
+| OpenStreetMap tiles | Map imagery on the service map | ODbL — attribution required | The required "© OpenStreetMap contributors" credit is rendered in the map's bottom-right corner. No API key. |
+| OSRM demo router | Optional road route from the workshop to a customer | Public demo endpoint, no key | Strictly an enhancement. The app computes a straight-line distance itself and labels it as an estimate whenever the router does not answer, so the feature never depends on a third party being up. |
+| Google Maps directions | The "Directions" links | Plain deep links | No SDK, no key, no data sent beyond the coordinates in the URL. |
+
+### A note on react-leaflet
+
+`react-leaflet`, the usual React wrapper, ships under the **Hippocratic License
+2.1**, which is not an OSI-approved permissive licence and is outside the
+families this event permits. It was deliberately **not** used. Leaflet itself is
+BSD-2-Clause and is driven directly from a small client component instead.
+
 ## Data
 
 | Asset | Purpose | Notes |
@@ -47,6 +64,12 @@ No external font CDN is contacted at runtime.
 
 Owner names, phone numbers and number plates in that dataset are synthetic
 sample data provided by the organisers. No real personal data is stored.
+
+Email addresses and home-service addresses are **generated demo data**, not part
+of the published dataset. Emails sit on `example.com`, which IANA reserves for
+documentation and which accepts no mail. Addresses are real Dhaka neighbourhoods
+at their approximate centroids — a recognisable city rather than a surveyed
+address book.
 
 ## Notable transitive dependencies
 

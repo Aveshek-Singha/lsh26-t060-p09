@@ -11,6 +11,7 @@
  */
 import { assertCivilDate } from "@/lib/domain/civilDate";
 import { parsePaisa } from "@/lib/domain/money";
+import { locationForOwner } from "./dhaka";
 import type {
   CivilDate,
   OdometerReading,
@@ -146,11 +147,14 @@ function demoEmails(owners: readonly RawOwner[]): Map<string, string> {
 export function normaliseCase(raw: RawCase): NormalisedCase {
   const emails = demoEmails(raw.owners);
 
-  const owners: Owner[] = raw.owners.map((owner) => ({
+  const owners: Owner[] = raw.owners.map((owner, index) => ({
     id: owner.id,
     name: owner.name,
     phone: owner.phone,
     email: emails.get(owner.id)!,
+    // Spread across real Dhaka areas, deterministic per owner so the map is
+    // stable across re-seeds.
+    location: locationForOwner(index, Number(owner.id.replace(/\D/g, "")) || index),
   }));
 
   const ownerIds = new Set(owners.map((owner) => owner.id));

@@ -10,6 +10,8 @@ import { ErrorPanel } from "@/features/ui/states";
 import { ReminderMessage } from "@/features/owner/ReminderMessage";
 import { buildMailDraft, buildReminder, buildReminderSubject } from "@/features/owner/reminder";
 import { MailButton } from "@/features/owner/MailButton";
+import { ServiceMap } from "@/features/map/ServiceMap";
+import { DirectionsButton } from "@/features/map/DirectionsButton";
 
 export const dynamic = "force-dynamic";
 
@@ -140,7 +142,34 @@ export default async function OwnerPage({ params }: { params: Promise<{ id: stri
           ))}
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
+          {owner.location && (
+            <section
+              aria-label="Home service location"
+              className="rounded border border-line bg-surface p-4"
+            >
+              <p className="eyebrow mb-2">Home service</p>
+              <ServiceMap
+                pins={[
+                  {
+                    id: owner.id,
+                    name: owner.name,
+                    address: owner.location.address,
+                    lat: owner.location.lat,
+                    lng: owner.location.lng,
+                    status: actionableCount > 0 ? "overdue" : "fine",
+                  },
+                ]}
+                height="12rem"
+                zoom={15}
+              />
+              <p className="mt-2.5 text-xs text-mid">{owner.location.address}</p>
+              <div className="mt-2.5">
+                <DirectionsButton location={owner.location} compact />
+              </div>
+            </section>
+          )}
+
           {actionableCount === 0 ? (
             <div className="rounded border border-dashed border-line bg-surface px-4 py-8 text-center">
               <p className="text-sm font-semibold text-hi">Nothing due</p>

@@ -35,6 +35,7 @@ async function main(): Promise<void> {
     name: owner.name,
     phone: owner.phone,
     ...(owner.email ? { email: owner.email } : {}),
+    ...(owner.location ? { location: owner.location } : {}),
   }));
 
   const vehicleDocs: VehicleDoc[] = data.vehicles.map((vehicle) => ({

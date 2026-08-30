@@ -661,6 +661,109 @@ test.describe("Dashboard", () => {
   });
 });
 
+test.describe("Service map", () => {
+  test("plots today's calls on a real map of Dhaka", async ({ page }) => {
+    await page.goto("/map");
+    await expect(page.getByRole("heading", { name: /service map/i })).toBeVisible();
+
+    // Tiles actually load; a blank grey box would also "render".
+    await expect.poll(async () => page.locator(".leaflet-tile").count()).toBeGreaterThan(0);
+
+    // One marker per located customer, plus the workshop.
+    const rows = await page.locator("[data-map-owner]").count();
+    expect(rows).toBeGreaterThan(0);
+    await expect
+      .poll(async () => page.locator(".leaflet-marker-icon").count())
+      .toBe(rows + 1);
+
+    // OpenStreetMap requires visible attribution.
+    await expect(page.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+  });
+
+  test("selecting a customer zooms the map to them", async ({ page }) => {
+    await page.goto("/map");
+    await expect.poll(async () => page.locator(".leaflet-tile").count()).toBeGreaterThan(0);
+
+    const row = page.locator("[data-map-owner]").first();
+    const id = await row.getAttribute("data-map-owner");
+    expect(await row.getAttribute("data-selected")).toBe("no");
+
+    await row.getByRole("button").first().click();
+
+    await expect(page.locator(`[data-map-owner="${id}"]`)).toHaveAttribute(
+      "data-selected",
+      "yes",
+    );
+    await expect(page.locator(".leaflet-popup")).toBeVisible();
+
+    // Selecting again clears it, so the map can be returned to the whole round.
+    await row.getByRole("button").first().click();
+    await expect(page.locator(`[data-map-owner="${id}"]`)).toHaveAttribute(
+      "data-selected",
+      "no",
+    );
+  });
+
+  test("every customer has a Dhaka address and a directions link", async ({ page }) => {
+    await page.goto("/owners/O01");
+
+    await expect(page.getByText(/Dhaka$/).first()).toBeVisible();
+    await expect.poll(async () => page.locator(".leaflet-container").count()).toBe(1);
+
+    const directions = page.getByRole("link", { name: /Directions from workshop/ });
+    const href = (await directions.getAttribute("href"))!;
+    const url = new URL(href);
+    expect(url.hostname).toBe("www.google.com");
+    // Routed from the workshop to the customer, for driving.
+    expect(url.searchParams.get("origin")).toMatch(/^23\.\d+,90\.\d+$/);
+    expect(url.searchParams.get("destination")).toMatch(/^23\.\d+,90\.\d+$/);
+    expect(url.searchParams.get("travelmode")).toBe("driving");
+    // Dhaka sits near 23.8N, 90.4E — a coordinate outside that is a data bug.
+    const [lat, lng] = url.searchParams.get("destination")!.split(",").map(Number);
+    expect(lat).toBeGreaterThan(23.6);
+    expect(lat).toBeLessThan(24.0);
+    expect(lng).toBeGreaterThan(90.2);
+    expect(lng).toBeLessThan(90.6);
+  });
+
+  test("selecting a customer draws a route and reports distance and time", async ({ page }) => {
+    await page.goto("/map");
+    await expect.poll(async () => page.locator(".leaflet-tile").count()).toBeGreaterThan(0);
+
+    await page.locator("[data-map-owner]").first().getByRole("button").first().click();
+
+    // The panel names the customer and gives both figures.
+    await expect(page.getByText("Route from workshop")).toBeVisible();
+    await expect(page.getByText("Distance", { exact: true })).toBeVisible();
+    await expect(page.getByText("Drive time", { exact: true })).toBeVisible();
+
+    // A route line is drawn on the map itself.
+    await expect.poll(async () => page.locator(".leaflet-overlay-pane path").count()).toBeGreaterThan(0);
+
+    // The distance resolves to a real figure, in km or m.
+    await expect
+      .poll(async () => page.locator("[data-route-km]").innerText(), { timeout: 12_000 })
+      .toMatch(/^\d+(\.\d+)?\s*(km|m)$/);
+    await expect
+      .poll(async () => page.locator("[data-route-time]").innerText(), { timeout: 12_000 })
+      .toMatch(/min|hr/);
+
+    // And it says which kind of figure it is, rather than passing an estimate
+    // off as a measurement.
+    await expect(page.getByText(/Measured road route|Straight-line estimate/)).toBeVisible();
+  });
+
+  test("groups the round by area so a trip can be planned", async ({ page }) => {
+    await page.goto("/map");
+    await expect(page.getByRole("heading", { name: /By area/ })).toBeVisible();
+    const areas = page.locator("h3");
+    expect(await areas.count()).toBeGreaterThan(1);
+    // Real Dhaka neighbourhoods, not invented ones.
+    const names = (await areas.allInnerTexts()).join(" ");
+    expect(names).toMatch(/Gulshan|Uttara|Dhanmondi|Mirpur|Banani|Motijheel|Bashundhara/);
+  });
+});
+
 test.describe("Motion", () => {
   test("buttons acknowledge a press", async ({ page }) => {
     await page.goto("/");
