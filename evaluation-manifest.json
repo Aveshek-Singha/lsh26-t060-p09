@@ -1,0 +1,175 @@
+{
+  "schema_note": "Evaluation manifest for LofiStack Hackathon 2026. Each required feature lists a given/when/expected check a judge can run against the live URL with no setup.",
+  "event": "LofiStack Hackathon 2026",
+  "event_code": "LSH26-8490-C900",
+  "team": "t060",
+  "problem_id": "P09",
+  "problem_title": "Vehicle Service Due Predictor",
+  "project_name": "Service Register",
+  "repository": "https://github.com/Aveshek-Singha/lsh26-t060-p09",
+  "live_url": null,
+  "live_url_note": "To be filled in before submission.",
+  "commit_sha": null,
+  "commit_sha_note": "Full 40-character SHA of the submitted state, filled in at submission time.",
+
+  "stack": {
+    "framework": "Next.js 16.3.3 (App Router)",
+    "language": "TypeScript 5.9",
+    "database": "MongoDB Atlas (official driver, no ODM)",
+    "styling": "Tailwind CSS 4",
+    "hosting": "Vercel",
+    "authentication": "none — no required feature involves user accounts, so no login gates any functionality"
+  },
+
+  "setup_required_by_judge": "None. The live URL opens directly on the call list with the fleet already seeded.",
+
+  "working_date": {
+    "value": "2026-08-30",
+    "explanation": "The published dataset states that 'today' is a field of the case and never the clock, so the application stores a working date rather than reading the system time. It is shown in the header and can be changed there; every due date and status recalculates from it."
+  },
+
+  "required_features": [
+    {
+      "id": "MVP-1",
+      "requirement": "Create at least 40 vehicles belonging to at least 25 owners, each with service items on fixed-date, time and distance rules, plus current odometer readings and past service records.",
+      "implemented": true,
+      "verify": {
+        "given": "The seeded database.",
+        "when": "Open /vehicles, or GET /api/health.",
+        "expected": "42 vehicles across 27 owners are listed. /api/health returns {\"owners\":27,\"vehicles\":42,\"seeded\":true}. Opening any vehicle shows items tagged FIXED DATE, TIME and DISTANCE, an odometer history and past service records."
+      },
+      "evidence": {
+        "route": "/vehicles",
+        "api": "/api/health",
+        "counts": { "vehicles": 42, "owners": 27, "service_items": 165, "history_records": 99 },
+        "data_source": "Case PUB-01 of the organisers' published P09 dataset, loaded unmodified."
+      }
+    },
+    {
+      "id": "MVP-2",
+      "requirement": "Work out a next due date for every item using its own rule. For distance based items, estimate the date using how far that vehicle runs per day. Mark every item as overdue, due soon, or fine.",
+      "implemented": true,
+      "verify": {
+        "given": "Vehicle V01 on the working date 2026-08-30.",
+        "when": "Open /vehicles/V01.",
+        "expected": "Every item shows a next due date, a status badge of Overdue / Due soon / Fine, and the reasoning that produced it. Distance items read 'Runs 72.6 km/day · N km to go'; time items read 'Last done <date> + N months'; fixed-date items read 'Fixed expiry date <date>'."
+      },
+      "rules": {
+        "fixed_date": "due = the recorded expiry date",
+        "period_months": "due = last service date + interval, clamping month-ends (31 Jan + 1 month = 28 Feb)",
+        "distance_km": "rate = (latest km - earliest km) / days between; due = working date + (last service km + interval - current km) / rate"
+      },
+      "status_bands": {
+        "overdue": "due date is before the working date",
+        "due_soon": "due within 30 days",
+        "fine": "more than 30 days away",
+        "no_estimate": "shown when a rate cannot honestly be derived, e.g. fewer than two odometer readings or a vehicle that has not moved — no date is fabricated"
+      },
+      "evidence": { "route": "/vehicles/V01" }
+    },
+    {
+      "id": "MVP-3",
+      "requirement": "Give the workshop a daily call list: which owner to call, which vehicle, which items are due and why. Sort it so the most overdue and the highest value work comes first.",
+      "implemented": true,
+      "verify": {
+        "given": "The seeded fleet on 2026-08-30.",
+        "when": "Open / (the home page).",
+        "expected": "Owners needing a call are listed highest priority first, each with the owner name, a tap-to-dial phone number, the vehicle, and every due item with its own stated reason and cost. Scores decrease down the list. Expand 'How this list is ordered' to read the rule; each row prints its own arithmetic."
+      },
+      "sort_rule": {
+        "formula": "score = clamp(days overdue of the worst item, -30, 180) + min(total value of due work in thousands of taka, 40)",
+        "rationale": "Urgency leads and money breaks ties. The value term is capped at 40 points so an expensive job can never outrank a badly overdue safety item; the urgency term is floored at -30 so vehicles that are merely due soon still sort sensibly against each other.",
+        "stated_in_ui": true
+      },
+      "evidence": { "route": "/", "explainer": "Expand 'How this list is ordered' on the home page." }
+    },
+    {
+      "id": "MVP-4",
+      "requirement": "Give each owner a vehicle page showing every item, its next due date and its cost. Let the workshop record a completed service so that item resets and the service history grows.",
+      "implemented": true,
+      "verify": {
+        "given": "Any vehicle, for example /vehicles/V01.",
+        "when": "Press 'Record service' on one item, then Save.",
+        "expected": "A success message appears, that item's next due date moves forward and its status changes, the Service history table gains exactly one row, and every other item on the vehicle is completely unchanged. Submitting the same service twice is rejected with a readable message."
+      },
+      "single_item_reset": {
+        "guaranteed": true,
+        "how": "The history row is tagged with the item name so only that item's next-due calculation moves. Fixed-date renewals additionally use a MongoDB arrayFilters update targeting exactly one array element; the plain positional operator would only ever match the first entry.",
+        "automated_check": "npm run verify:reset — snapshots every item's computed due date, records one service, and asserts all siblings are byte-identical. Runs against the live database for all three rule types."
+      },
+      "evidence": { "routes": ["/vehicles/V01", "/owners/O01"] }
+    }
+  ],
+
+  "bonus_features": [
+    {
+      "requirement": "Show how much work is coming in the next 8 weeks so the workshop can see busy weeks in advance.",
+      "implemented": true,
+      "route": "/forecast",
+      "note": "Eight weekly bars with item counts and value, busiest week highlighted. Already-overdue work is held in a separate backlog band rather than folded into week one, because it is a backlog to clear and not capacity landing on a date."
+    },
+    {
+      "requirement": "Let the workshop enter a new odometer reading and have every distance based estimate update.",
+      "implemented": true,
+      "route": "/vehicles/V01",
+      "note": "'Add odometer reading' recalculates the vehicle's measured daily running, which moves every distance-based due date on that vehicle. A same-day entry corrects the existing reading rather than storing two readings for one date."
+    },
+    {
+      "requirement": "Create a copy ready reminder message per owner naming the items due and the cost.",
+      "implemented": true,
+      "route": "/owners/O01",
+      "note": "Plain text so it survives being pasted into SMS or WhatsApp. Grouped by vehicle, each item with days overdue and cost, ending with an estimated total."
+    }
+  ],
+
+  "constraints": [
+    {
+      "constraint": "Distance based items must use the vehicle's daily running. A fixed interval for everything will not score.",
+      "satisfied": true,
+      "evidence": "Each vehicle's rate is measured from its own odometer history and printed in the UI. A unit test asserts that two vehicles with an identical interval and identical last service receive different due dates when their daily running differs (10 days vs 100 days at 100 km/day vs 10 km/day)."
+    },
+    {
+      "constraint": "Recording a completed service must reset that one item only.",
+      "satisfied": true,
+      "evidence": "npm run verify:reset proves it against the live database for all three rules; an end-to-end test asserts every sibling item is unchanged after a save."
+    },
+    {
+      "constraint": "The call list must be sorted by a rule you can explain, not just a list of everything not fine.",
+      "satisfied": true,
+      "evidence": "The formula is stated on the page in words and symbols, and every row prints its own arithmetic so any position can be checked by hand."
+    }
+  ],
+
+  "edge_cases_handled": [
+    "Month-end clamping: 31 Jan + 1 month resolves to 28 Feb rather than overflowing into March. 113 records in the source data fall on the 29th-31st.",
+    "Dates are handled as YYYY-MM-DD strings with dedicated arithmetic, avoiding the UTC-parsing day shift of new Date('2026-08-30').",
+    "Money is integer paisa throughout, so no total drifts through floating point.",
+    "A vehicle with fewer than two odometer readings, or one that has not moved, is reported as 'no estimate' instead of dividing by a zero rate.",
+    "A distance item whose target kilometres have already passed is back-dated to when it fell due, rather than showing a future date.",
+    "Odometer readings cannot go backwards, be dated in the future, or imply over 1,000 km per day.",
+    "A same-day odometer entry corrects the existing reading rather than creating a duplicate date that would make the rate ambiguous.",
+    "Recording the same service twice is rejected with a readable message.",
+    "Services cannot be recorded with a future date or a date earlier than the item's last service.",
+    "Fixed-date items require an explicit new expiry on renewal, since they do not renew on an interval.",
+    "Owner names are not unique in the data, so records are keyed by id and the phone number disambiguates.",
+    "Unknown vehicle or owner ids return 404; a database outage renders an explanatory panel with retry guidance rather than a blank page.",
+    "Empty, loading, success and error states are present throughout; nothing fails silently."
+  ],
+
+  "testing": {
+    "unit_tests": { "count": 52, "command": "npm test", "covers": "The pure due-date engine: month clamping, zero and negative rates, single-reading vehicles, targets already passed, exact status boundaries, money round-trips, and the ordering rule including its caps." },
+    "e2e_tests": { "count": 18, "command": "npm run test:e2e", "covers": "One block per required feature, plus the odometer flow, both themes, a 375px viewport, and a missing vehicle returning 404." },
+    "constraint_check": { "command": "npm run verify:reset", "covers": "Single-item reset against the live database for all three rule types." }
+  },
+
+  "accessibility_and_responsive": {
+    "themes": "Dark and light, each with its own status palette so contrast holds in both. Theme is applied before first paint, so there is no flash on load.",
+    "narrow_screen": "Usable at 375px with no horizontal scroll; an end-to-end test asserts this.",
+    "status_encoding": "Status is carried by text label as well as colour, so it does not depend on colour vision."
+  },
+
+  "mocked": {
+    "anything_mocked": false,
+    "explanation": "Every figure on screen is computed from data in MongoDB and every write goes to the database. Two clarifications: the fleet is seeded sample data (case PUB-01 of the organisers' dataset, with synthetic names and plates), and item costs are the expected price recorded against each item rather than live quotes — the reminder message states this to the customer."
+  }
+}
