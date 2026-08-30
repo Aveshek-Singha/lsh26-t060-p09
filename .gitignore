@@ -67,3 +67,6 @@ AGENTS.md
 .claude/
 .cursor/
 .aider*
+
+# Tooling lockfile, not part of the deliverable
+skills-lock.json

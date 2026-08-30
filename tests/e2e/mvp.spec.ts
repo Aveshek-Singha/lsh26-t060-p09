@@ -125,6 +125,40 @@ test.describe("Feature 3 — the daily call list", () => {
     await expect(first.getByText(/urgency \+/)).toBeVisible();
   });
 
+  test("filters the list by a typed plate, owner or item", async ({ page }) => {
+    await page.goto("/");
+    const rows = page.locator("[data-owner]");
+    const total = await rows.count();
+    expect(total).toBeGreaterThan(1);
+
+    // Search by the owner name shown on the first row.
+    const firstOwner = await rows.first().locator("a").first().innerText();
+    await page.getByLabel(/Search by owner/i).fill(firstOwner);
+    await expect.poll(async () => rows.count()).toBeLessThan(total);
+    await expect(rows.first()).toContainText(firstOwner);
+
+    // Clearing restores the full list.
+    await page.getByRole("button", { name: /^Clear$/ }).click();
+    await expect.poll(async () => rows.count()).toBe(total);
+  });
+
+  test("filters by status and explains an empty result", async ({ page }) => {
+    await page.goto("/");
+    const rows = page.locator("[data-owner]");
+    const total = await rows.count();
+
+    await page.getByRole("button", { name: /^Overdue \d+$/ }).click();
+    const overdueCount = await rows.count();
+    expect(overdueCount).toBeGreaterThan(0);
+    expect(overdueCount).toBeLessThanOrEqual(total);
+
+    // A search that cannot match anything must say so, not show a blank page.
+    await page.getByLabel(/Search by owner/i).fill("zzzznotarealplate");
+    await expect(page.getByText("No matching calls")).toBeVisible();
+    await page.getByRole("button", { name: /^Show all \d+$/ }).click();
+    await expect.poll(async () => rows.count()).toBe(total);
+  });
+
   test("the sorting rule can be opened and read", async ({ page }) => {
     await page.goto("/");
     await page.getByText("How this list is ordered").click();

@@ -33,7 +33,8 @@ to go`, or `Last done 26 Feb 2026 + 6 months`. Nothing is a black box.
       due soon or fine.
 - [x] **3. A daily call list.** Which owner to ring, about which vehicle, which items
       are due and why — ordered by a stated rule, explained on the page. The list is
-      keyed by **owner**, so someone with three vehicles is one call, not three.
+      keyed by **owner**, so someone with three vehicles is one call, not three, and is
+      searchable by plate, owner, phone or item with All / Overdue / Due soon filters.
 - [x] **4. A vehicle page per owner, and recording a service.** Every item with its next
       due date and cost. Recording a completed service resets that one item and grows
       the service history.
@@ -100,8 +101,8 @@ npm run dev                    # http://localhost:3000
 |---|---|
 | `npm run check:db` | Verifies the Atlas connection and reports what is seeded |
 | `npm run seed` | Resets the fleet to the seeded state (idempotent) |
-| `npm test` | 52 unit tests over the pure due-date engine |
-| `npm run test:e2e` | 18 end-to-end tests, one block per required feature |
+| `npm test` | 55 unit tests over the pure due-date engine |
+| `npm run test:e2e` | 21 end-to-end tests, one block per required feature |
 | `npm run verify:reset` | Proves against the real database that recording a service resets one item only |
 | `npm run build` | Production build |
 
@@ -167,13 +168,13 @@ _Not yet deployed._
 
 ## Testing
 
-70 automated tests, all passing:
+76 automated tests, all passing:
 
-- **52 unit tests** over the engine — month-end clamping, zero and negative
+- **55 unit tests** over the engine — month-end clamping, zero and negative
   running rates, single-reading vehicles, targets already passed, the exact
   overdue/due-soon boundaries, money round-trips, and the ordering rule
   including its caps.
-- **18 end-to-end tests** — one block per required feature, plus the odometer
+- **21 end-to-end tests** — one block per required feature, plus the odometer
   flow, both themes, a 375 px viewport, and a missing vehicle returning 404.
 
 `npm run verify:reset` additionally checks the single-item reset constraint

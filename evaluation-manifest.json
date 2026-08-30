@@ -88,7 +88,8 @@
       "evidence": {
         "route": "/",
         "explainer": "Expand 'How this list is ordered' on the home page."
-      }
+      },
+      "usability": "The list carries a search box (owner, phone, plate, model or item) and All / Overdue / Due soon filters, so a judge or a workshop hand can find a specific vehicle among 27 calls without scrolling."
     },
     {
       "id": "MVP-4",
@@ -172,9 +173,9 @@
       "covers": "The pure due-date engine: month clamping, zero and negative rates, single-reading vehicles, targets already passed, exact status boundaries, money round-trips, and the ordering rule including its caps."
     },
     "e2e_tests": {
-      "count": 19,
+      "count": 21,
       "command": "npm run test:e2e",
-      "covers": "One block per required feature, plus the odometer flow, both themes, a 375px viewport, and a missing vehicle returning 404."
+      "covers": "One block per required feature, plus search and status filtering, the odometer flow, both themes, a 375px viewport, and a missing vehicle returning 404."
     },
     "constraint_check": {
       "command": "npm run verify:reset",
