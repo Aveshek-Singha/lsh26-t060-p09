@@ -124,12 +124,13 @@ export function CallRow({
                       (candidate) => candidate.name === item.itemName,
                     );
                     return (
-                      // Two rows, not three: the reason and the action share a
-                      // line, which takes a whole line back per item. With five
-                      // items on a call that is five fewer lines to scroll past.
+                      // One line per item, the way the owner page reads: the
+                      // facts sit together on the left and the money lands in a
+                      // fixed right-hand column, so costs align down the card
+                      // instead of drifting with the text above them.
                       <li
                         key={item.itemName}
-                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 text-xs"
+                        className="group/item grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 border-t border-line py-1.5 text-xs first:border-0 first:pt-0"
                       >
                         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
                           <span className="font-medium text-hi">{item.itemName}</span>
@@ -144,14 +145,17 @@ export function CallRow({
                             ({item.dueDate ? formatDate(item.dueDate) : "no date"})
                           </span>
                         </div>
-                        <span className="nums whitespace-nowrap text-mid">
+
+                        <span className="nums whitespace-nowrap tabular-nums text-mid">
                           {formatBdt(item.costPaisa)}
                         </span>
 
-                        <div className="col-span-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                          {/* The reason, verbatim from the engine that produced the date. */}
-                          <span className="min-w-0 text-low">{item.basis}</span>
-                          {/* Booked in over the phone? Record it without leaving the list. */}
+                        {/* The reason and the action share the second line.
+                            The action is the least important thing in the row,
+                            so it is a quiet link that firms up on hover rather
+                            than a boxed button repeated seven times down a card. */}
+                        <div className="col-span-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                          <p className="min-w-0 text-low">{item.basis}</p>
                           {definition && (
                             <div className="no-print">
                               <RecordServiceForm

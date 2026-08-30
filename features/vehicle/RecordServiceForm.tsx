@@ -62,9 +62,10 @@ export function RecordServiceForm({
         aria-label={`Record service for ${item.name}`}
         className={
           compact
-            ? // min-h keeps the touch target usable on a phone without making
-              // the button visually heavier in a dense list.
-              "mt-0.5 inline-flex min-h-7 items-center rounded border border-line px-2.5 py-1 text-[0.6875rem] font-medium text-mid transition-colors hover:border-accent hover:text-accent"
+            ? // A quiet control: repeated once per item, a boxed button turns a
+              // card into a column of boxes. min-h keeps the touch target
+              // usable on a phone even though the box is gone.
+              "inline-flex min-h-6 items-center rounded text-[0.6875rem] font-medium text-low underline-offset-4 transition-colors hover:text-accent hover:underline"
             : "rounded border border-line bg-raised px-2.5 py-1.5 text-xs font-medium text-hi transition-colors hover:border-accent hover:text-accent"
         }
       >

@@ -3,9 +3,9 @@ import { formatBdt } from "@/lib/domain/money";
 /**
  * Chart primitives, built from CSS and SVG.
  *
- * No charting library: the whole dashboard is four simple forms, and a library
- * would cost more in bundle than it saves in code. Everything animates nothing
- * and paints with the app's own tokens, so both themes come free.
+ * No charting library: the whole dashboard is three simple forms, and a library
+ * would cost more in bundle than it saves in code. Everything paints with the
+ * app's own tokens, so both themes come free.
  *
  * Mark specs followed throughout: 2px surface gaps between adjacent fills, 4px
  * rounded data-ends, recessive axes, and direct labels rather than a number on
@@ -82,7 +82,6 @@ export function StackedBar({
 export interface Column {
   key: string;
   label: string;
-  sublabel?: string;
   value: number;
   detail?: string;
   emphasis?: boolean;
@@ -94,6 +93,10 @@ export interface Column {
  * One series, so a single hue rather than a categorical set, and the heading
  * names it — no legend box needed. The tallest column is emphasised because
  * "which week is worst" is the question being asked.
+ *
+ * The bar track stretches rather than hugging its content: a percentage height
+ * resolves to zero against a parent whose own height is indefinite, which is
+ * exactly how this chart rendered as bare numbers with no bars at all.
  */
 export function ColumnChart({
   columns,
@@ -110,26 +113,27 @@ export function ColumnChart({
     <div
       role="img"
       aria-label={`${ariaLabel}: ${columns.map((c) => `${c.label} ${c.value}`).join(", ")}`}
-      className="flex items-end gap-1.5"
-      style={{ height: "10rem" }}
+      className="flex h-44 items-stretch gap-1.5"
     >
       {columns.map((c) => {
         const pct = max === 0 ? 0 : (c.value / max) * 100;
         return (
-          <div key={c.key} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-            <div className="flex w-full flex-1 items-end">
+          <div key={c.key} className="flex min-w-0 flex-1 flex-col gap-1.5">
+            {/* min-h-0 lets this shrink inside the column; without it the
+                track refuses to give ground to the labels below. */}
+            <div className="flex min-h-0 flex-1 flex-col justify-end">
+              <span className="nums mb-1 text-center text-[0.6875rem] font-semibold text-hi">
+                {c.value}
+              </span>
               <div
                 title={`${c.label}: ${c.detail ?? valueFormatter(c.value)}`}
-                style={{ height: `${Math.max(pct, c.value > 0 ? 3 : 0)}%` }}
+                style={{ height: `${Math.max(pct, c.value > 0 ? 4 : 0)}%` }}
                 className={`w-full rounded-t ${
-                  c.emphasis ? "bg-accent" : "bg-accent/35"
-                } ${c.value === 0 ? "bg-line" : ""}`}
+                  c.value === 0 ? "bg-line" : c.emphasis ? "bg-accent" : "bg-accent/40"
+                }`}
               />
             </div>
-            {/* Selective direct labels: the count on every column, the money in
-                the tooltip. A number on every mark twice over is noise. */}
-            <span className="nums text-[0.6875rem] font-semibold text-hi">{c.value}</span>
-            <span className="nums w-full truncate text-center text-[0.625rem] text-low">
+            <span className="nums w-full truncate border-t border-line pt-1.5 text-center text-[0.625rem] text-low">
               {c.label}
             </span>
           </div>

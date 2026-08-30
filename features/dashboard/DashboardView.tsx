@@ -177,7 +177,9 @@ export function DashboardView({
               label: formatDateShort(w.start),
               value: w.count,
               detail: `${w.count} items, ${formatBdt(w.valuePaisa)}`,
-              emphasis: w.index === forecast.busiestIndex && w.count > 0,
+              // Every week at the maximum, not just the first: three weeks
+              // tied at eight, and emphasising one implied it stood alone.
+              emphasis: w.count === forecast.maxCount && w.count > 0,
             }))}
           />
         </Panel>

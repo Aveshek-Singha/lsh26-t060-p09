@@ -162,6 +162,7 @@ export default async function OwnerPage({ params }: { params: Promise<{ id: stri
                 ]}
                 height="12rem"
                 zoom={15}
+                showWorkshop={false}
               />
               <p className="mt-2.5 text-xs text-mid">{owner.location.address}</p>
               <div className="mt-2.5">
