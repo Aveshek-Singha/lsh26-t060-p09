@@ -3,6 +3,7 @@ import { formatDate } from "@/lib/domain/civilDate";
 import { formatBdt } from "@/lib/domain/money";
 import { sumPaisa } from "@/lib/domain/money";
 import { CallListView } from "@/features/call-list/CallListView";
+import { ExportButtons } from "@/features/call-list/ExportButtons";
 import { SortExplainer } from "@/features/call-list/SortExplainer";
 import { EmptyState, ErrorPanel, PageHeading } from "@/features/ui/states";
 
@@ -36,9 +37,12 @@ export default async function CallListPage() {
         title="Call list"
         subtitle={`Everything due or overdue across ${totals.vehicles} vehicles, ordered by who to ring first.`}
         aside={
-          <div className="text-right">
-            <p className="eyebrow">Working date</p>
-            <p className="nums text-sm font-semibold text-hi">{formatDate(fleet.asOf)}</p>
+          <div className="flex items-end gap-4">
+            <ExportButtons entries={callList} asOf={fleet.asOf} />
+            <div className="text-right">
+              <p className="eyebrow">Working date</p>
+              <p className="nums text-sm font-semibold text-hi">{formatDate(fleet.asOf)}</p>
+            </div>
           </div>
         }
       />
@@ -66,7 +70,7 @@ export default async function CallListPage() {
           action={{ href: "/vehicles", label: "Browse the fleet" }}
         />
       ) : (
-        <CallListView entries={callList} />
+        <CallListView entries={callList} asOf={fleet.asOf} />
       )}
     </>
   );

@@ -193,3 +193,57 @@ body {
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* ------------------------------------------------------------------ print
+   The call list gets printed and carried to the phone. Drop the chrome, force
+   a light ground so it does not burn a cartridge, and keep a call from being
+   split across two pages mid-item. */
+
+.no-print { display: revert; }
+
+@media print {
+  .no-print,
+  header,
+  nav,
+  details {
+    display: none !important;
+  }
+
+  /* .dark has the same specificity as :root, so it is named explicitly here.
+     Otherwise printing in dark mode puts white text on a white page. */
+  :root,
+  .dark {
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --text-hi: #000000;
+    --text-mid: #333333;
+    --text-low: #555555;
+    --line: #cccccc;
+    --overdue: #a01008;
+    --overdue-bg: #ffffff;
+    --due-soon: #8a4a00;
+    --due-soon-bg: #ffffff;
+    --fine: #0f5c2e;
+    --fine-bg: #ffffff;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+  }
+
+  main { max-width: none !important; padding: 0 !important; }
+
+  li { break-inside: avoid; page-break-inside: avoid; }
+
+  .hazard { background-image: none !important; }
+
+  a { text-decoration: none !important; color: #000 !important; }
+
+  /* Phone numbers are the point of the printout, so print them in full. */
+  a[href^="tel:"]::after { content: ""; }
+
+  .stagger > *, .rise { animation: none !important; }
+}

@@ -6,7 +6,7 @@ import type { CallListEntry } from "@/lib/domain/priority";
 import { formatBdt, sumPaisa } from "@/lib/domain/money";
 import { CallRow } from "./CallRow";
 
-type StatusFilter = "all" | "overdue" | "due_soon";
+type StatusFilter = "all" | "overdue" | "due_soon" | "to_call";
 
 /**
  * The call list, with a search box and status filter.
@@ -16,7 +16,13 @@ type StatusFilter = "all" | "overdue" | "due_soon";
  * whoever just rang. Filtering happens in the browser over data already sent, so
  * it is instant and needs no round trip.
  */
-export function CallListView({ entries }: { entries: CallListEntry[] }) {
+export function CallListView({
+  entries,
+  asOf,
+}: {
+  entries: CallListEntry[];
+  asOf: string;
+}) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
 
@@ -34,19 +40,24 @@ export function CallListView({ entries }: { entries: CallListEntry[] }) {
           .join(" ")
           .toLowerCase(),
         hasOverdue: entry.actionable.some((item) => item.status === "overdue"),
+        called: entry.owner?.lastCalledOn === asOf,
       })),
-    [entries],
+    [entries, asOf],
   );
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return indexed
       .filter(({ haystack }) => needle === "" || haystack.includes(needle))
-      .filter(({ hasOverdue }) => {
+      .filter(({ hasOverdue, called }) => {
         if (status === "overdue") return hasOverdue;
         if (status === "due_soon") return !hasOverdue;
+        if (status === "to_call") return !called;
         return true;
       })
+      // Calls already made sink to the bottom rather than vanishing, so the
+      // day's work stays visible and the mark can be undone.
+      .sort((a, b) => Number(a.called) - Number(b.called))
       .map(({ entry }) => entry);
   }, [indexed, query, status]);
 
@@ -55,6 +66,7 @@ export function CallListView({ entries }: { entries: CallListEntry[] }) {
       all: indexed.length,
       overdue: indexed.filter((i) => i.hasOverdue).length,
       due_soon: indexed.filter((i) => !i.hasOverdue).length,
+      to_call: indexed.filter((i) => !i.called).length,
     }),
     [indexed],
   );
@@ -65,7 +77,7 @@ export function CallListView({ entries }: { entries: CallListEntry[] }) {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="no-print mb-4 flex flex-wrap items-center gap-3">
         <div className="relative min-w-0 flex-1 sm:max-w-xs">
           <label htmlFor="call-search" className="sr-only">
             Search by owner, phone, plate, model or item
@@ -83,6 +95,9 @@ export function CallListView({ entries }: { entries: CallListEntry[] }) {
         <div className="flex items-center gap-1" role="group" aria-label="Filter by status">
           <FilterChip active={status === "all"} onClick={() => setStatus("all")}>
             All {counts.all}
+          </FilterChip>
+          <FilterChip active={status === "to_call"} onClick={() => setStatus("to_call")}>
+            Still to call {counts.to_call}
           </FilterChip>
           <FilterChip
             active={status === "overdue"}
@@ -148,7 +163,7 @@ export function CallListView({ entries }: { entries: CallListEntry[] }) {
       ) : (
         <ol className="stagger space-y-3">
           {visible.map((entry, index) => (
-            <CallRow key={entry.key} entry={entry} rank={index + 1} />
+            <CallRow key={entry.key} entry={entry} rank={index + 1} asOf={asOf} />
           ))}
         </ol>
       )}

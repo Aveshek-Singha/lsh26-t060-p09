@@ -5,9 +5,11 @@ import { z } from "zod";
 
 import {
   addOdometerReading,
+  getAsOfDate,
   getVehicleById,
   recordService,
   setAsOfDate,
+  setOwnerCalled,
 } from "@/lib/db/repo";
 import { isCivilDate } from "@/lib/domain/civilDate";
 import { parsePaisa } from "@/lib/domain/money";
@@ -145,6 +147,34 @@ export async function addReadingAction(
       `Odometer updated to ${parsed.data.km.toLocaleString("en-US")} km.` +
         (vehicle ? " Distance-based estimates have been recalculated." : ""),
     );
+  } catch (error) {
+    return failure(messageFor(error));
+  }
+}
+
+/* --------------------------------------------------------- mark as called */
+
+const calledSchema = z.object({
+  ownerId: z.string().min(1),
+  called: z.enum(["yes", "no"]),
+});
+
+export async function markCalledAction(
+  _previous: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const parsed = calledSchema.safeParse({
+    ownerId: formData.get("ownerId"),
+    called: formData.get("called"),
+  });
+  if (!parsed.success) return failure(firstIssue(parsed.error));
+
+  try {
+    const asOf = await getAsOfDate();
+    const called = parsed.data.called === "yes";
+    await setOwnerCalled(parsed.data.ownerId, called ? asOf : null);
+    revalidatePath("/", "layout");
+    return success(called ? "Marked as called." : "Moved back onto the list.");
   } catch (error) {
     return failure(messageFor(error));
   }

@@ -24,12 +24,15 @@ export function RecordServiceForm({
   assessment,
   asOf,
   currentKm,
+  compact = false,
 }: {
   vehicleId: string;
   item: ServiceItem;
   assessment: DueAssessment;
   asOf: string;
   currentKm: number | null;
+  /** Inline variant used on the call list, where space is tighter. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
@@ -56,9 +59,14 @@ export function RecordServiceForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded border border-line bg-raised px-2.5 py-1.5 text-xs font-medium text-hi transition-colors hover:border-accent hover:text-accent"
+        aria-label={`Record service for ${item.name}`}
+        className={
+          compact
+            ? "mt-0.5 rounded border border-line px-2 py-0.5 text-[0.6875rem] font-medium text-mid transition-colors hover:border-accent hover:text-accent"
+            : "rounded border border-line bg-raised px-2.5 py-1.5 text-xs font-medium text-hi transition-colors hover:border-accent hover:text-accent"
+        }
       >
-        Record service
+        {compact ? "Mark done" : "Record service"}
       </button>
     );
   }

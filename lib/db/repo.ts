@@ -32,7 +32,12 @@ export class NotFoundError extends Error {
 }
 
 function toOwner(doc: OwnerDoc): Owner {
-  return { id: doc._id, name: doc.name, phone: doc.phone };
+  return {
+    id: doc._id,
+    name: doc.name,
+    phone: doc.phone,
+    ...(doc.lastCalledOn ? { lastCalledOn: doc.lastCalledOn } : {}),
+  };
 }
 
 function toVehicle(doc: VehicleDoc): Vehicle {
@@ -289,4 +294,22 @@ export async function addOdometerReading(input: AddReadingInput): Promise<void> 
       { $push: { odometerReadings: { date: input.date, km: input.km } } },
     );
   }
+}
+
+/**
+ * Record that an owner has been rung.
+ *
+ * Stored as the working date rather than a timestamp, so it stays consistent
+ * with the rest of the app: move the working date on and yesterday's calls
+ * correctly reappear as still needing a call.
+ */
+export async function setOwnerCalled(ownerId: string, calledOn: CivilDate | null): Promise<void> {
+  const collection = await owners();
+  const existing = await collection.findOne({ _id: ownerId });
+  if (!existing) throw new NotFoundError(`No owner with id ${ownerId}`);
+
+  await collection.updateOne(
+    { _id: ownerId },
+    calledOn ? { $set: { lastCalledOn: calledOn } } : { $unset: { lastCalledOn: "" } },
+  );
 }

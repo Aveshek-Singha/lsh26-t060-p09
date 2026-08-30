@@ -44,6 +44,12 @@ export interface Owner {
   id: string;
   name: string;
   phone: string;
+  /**
+   * The working date on which this owner was last rung. Compared against the
+   * current working date to decide whether they still need a call today, so
+   * moving the working date forward correctly makes yesterday's calls due again.
+   */
+  lastCalledOn?: CivilDate;
 }
 
 export interface Vehicle {

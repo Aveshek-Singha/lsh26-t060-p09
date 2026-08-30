@@ -45,6 +45,18 @@ to go`, or `Last done 26 Feb 2026 + 6 months`. Nothing is a black box.
 - [x] **Odometer entry** that recalculates every distance-based estimate on the vehicle.
 - [x] **Copy-ready reminder message** per owner, naming the items due and the cost.
 
+### Workflow extras
+
+Built after the four required features were complete and tested:
+
+- **Record a service from the call list**, without opening the vehicle page.
+- **Mark an owner as called** — stored against the working date, so advancing the
+  date brings yesterday's calls back. Called owners sink to the bottom, dimmed
+  and undoable, rather than vanishing.
+- **Search and status filters** over owner, phone, plate, model and item.
+- **Print and CSV export** of the day's list.
+- **Loading skeletons** on the list pages.
+
 ## How the call list is ordered
 
 The brief requires an order that can be explained, so it is stated on the page
@@ -102,7 +114,7 @@ npm run dev                    # http://localhost:3000
 | `npm run check:db` | Verifies the Atlas connection and reports what is seeded |
 | `npm run seed` | Resets the fleet to the seeded state (idempotent) |
 | `npm test` | 55 unit tests over the pure due-date engine |
-| `npm run test:e2e` | 21 end-to-end tests, one block per required feature |
+| `npm run test:e2e` | 24 end-to-end tests, one block per required feature |
 | `npm run verify:reset` | Proves against the real database that recording a service resets one item only |
 | `npm run build` | Production build |
 
@@ -155,8 +167,6 @@ time, and `setMonth` overflows 31 Jan + 1 month into March.
 
 ## What We Would Build Next
 
-- **Record a service from the call list**, without opening the vehicle page.
-- **Mark a call as made**, so the list reflects who has already been rung today.
 - **SMS delivery** for the reminder, rather than copy and paste.
 - **Per-item intervals set by the workshop**, instead of the seeded defaults.
 - **A capacity model** on the forecast — bays and hours, not just item counts —
@@ -168,13 +178,13 @@ _Not yet deployed._
 
 ## Testing
 
-76 automated tests, all passing:
+79 automated tests, all passing:
 
 - **55 unit tests** over the engine — month-end clamping, zero and negative
   running rates, single-reading vehicles, targets already passed, the exact
   overdue/due-soon boundaries, money round-trips, and the ordering rule
   including its caps.
-- **21 end-to-end tests** — one block per required feature, plus the odometer
+- **24 end-to-end tests** — one block per required feature, plus the odometer
   flow, both themes, a 375 px viewport, and a missing vehicle returning 404.
 
 `npm run verify:reset` additionally checks the single-item reset constraint

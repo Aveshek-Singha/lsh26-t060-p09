@@ -167,6 +167,89 @@ test.describe("Feature 3 — the daily call list", () => {
   });
 });
 
+test.describe("Workflow extras", () => {
+  test("marks an owner as called and sinks them to the bottom", async ({ page }) => {
+    await page.goto("/");
+    const rows = page.locator("[data-owner]");
+    const first = rows.first();
+    const ownerId = await first.getAttribute("data-owner");
+
+    await first.getByRole("button", { name: "Mark called" }).click();
+
+    // The row stays visible (the mark is undoable) but is no longer first.
+    await expect
+      .poll(async () => page.locator(`[data-owner="${ownerId}"]`).getAttribute("data-called"), {
+        timeout: 15_000,
+      })
+      .toBe("yes");
+    await expect(page.locator(`[data-owner="${ownerId}"]`)).toContainText("Called today");
+    expect(await rows.first().getAttribute("data-owner")).not.toBe(ownerId);
+
+    // "Still to call" hides it; undo brings it back.
+    const total = await rows.count();
+    await page.getByRole("button", { name: /^Still to call \d+$/ }).click();
+    await expect.poll(async () => rows.count()).toBe(total - 1);
+
+    await page.getByRole("button", { name: /^All \d+$/ }).click();
+    await page.locator(`[data-owner="${ownerId}"]`).getByRole("button", { name: "Undo" }).click();
+    await expect
+      .poll(async () => page.locator(`[data-owner="${ownerId}"]`).getAttribute("data-called"), {
+        timeout: 15_000,
+      })
+      .toBe("no");
+  });
+
+  test("exports the call list as a CSV with one row per due item", async ({ page }) => {
+    await page.goto("/");
+    const download = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Export CSV" }).click(),
+    ]).then(([d]) => d);
+
+    expect(download.suggestedFilename()).toMatch(/^call-list-\d{4}-\d{2}-\d{2}\.csv$/);
+
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(chunk as Buffer);
+    const csv = Buffer.concat(chunks).toString("utf8");
+
+    expect(csv).toContain("Priority");
+    expect(csv).toContain("Days overdue");
+    // Commas inside a reason must not break the columns.
+    expect(csv.split(String.fromCharCode(10)).length).toBeGreaterThan(2);
+  });
+
+  test("records a service straight from the call list", async ({ page }) => {
+    await page.goto("/");
+    const row = page.locator("[data-owner]").first();
+    const ownerId = (await row.getAttribute("data-owner"))!;
+    const button = row.getByRole("button", { name: /^Record service for / }).first();
+    const label = (await button.getAttribute("aria-label"))!;
+    const itemName = label.replace("Record service for ", "");
+
+    await button.click();
+    await page
+      .getByRole("form", { name: label })
+      .getByRole("button", { name: /save service/i })
+      .click();
+
+    // Saving refreshes the list, so the row re-renders and the transient
+    // success message goes with it — the owner may drop off the list entirely
+    // once nothing of theirs is outstanding. The durable outcome is the real
+    // assertion: that item is no longer listed as due for this owner.
+    await expect
+      .poll(
+        async () => {
+          const owner = page.locator(`[data-owner="${ownerId}"]`);
+          if ((await owner.count()) === 0) return 0;
+          return owner.getByRole("button", { name: `Record service for ${itemName}` }).count();
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(0);
+  });
+});
+
 test.describe("Feature 4 — recording a service resets that item only", () => {
   test("moves the target item and leaves every sibling untouched", async ({ page }) => {
     // A vehicle not used by the other mutating specs.

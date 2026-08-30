@@ -4,6 +4,9 @@ import { formatDate, formatDayOffset } from "@/lib/domain/civilDate";
 import { formatBdt } from "@/lib/domain/money";
 import type { CallListEntry } from "@/lib/domain/priority";
 import { StatusBadge } from "@/features/ui/StatusBadge";
+import { RecordServiceForm } from "@/features/vehicle/RecordServiceForm";
+import { latestReading } from "@/lib/domain/rate";
+import { CalledToggle } from "./CalledToggle";
 
 /**
  * One phone call.
@@ -12,24 +15,36 @@ import { StatusBadge } from "@/features/ui/StatusBadge";
  * an owner with three vehicles is one call with three things to discuss, not
  * three separate calls. Their vehicles nest underneath.
  */
-export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number }) {
+export function CallRow({
+  entry,
+  rank,
+  asOf,
+}: {
+  entry: CallListEntry;
+  rank: number;
+  asOf: string;
+}) {
   const { owner, vehicles, actionable, priority } = entry;
   const worst = actionable[0]!;
   const isOverdue = worst.status === "overdue";
+  // Called *today* specifically: advancing the working date makes the call due
+  // again, which is what a daily worklist should do.
+  const called = owner?.lastCalledOn === asOf;
 
   return (
     <li
       className={`relative rounded border border-line bg-surface transition-colors hover:border-line-strong ${
-        isOverdue ? "hazard" : ""
-      }`}
+        isOverdue && !called ? "hazard" : ""
+      } ${called ? "opacity-55" : ""}`}
       data-owner={owner?.id ?? "unknown"}
       data-score={priority.score}
+      data-called={called ? "yes" : "no"}
     >
       {/* Status spine: a glanceable colour edge down the left of each call. */}
       <span
         aria-hidden
         className={`absolute inset-y-0 left-0 w-1 rounded-l ${
-          isOverdue ? "bg-overdue" : "bg-due-soon"
+          called ? "bg-fine" : isOverdue ? "bg-overdue" : "bg-due-soon"
         }`}
       />
 
@@ -42,7 +57,13 @@ export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number })
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <StatusBadge status={worst.status} />
+            {called ? (
+              <span className="inline-flex shrink-0 items-center rounded border border-fine/30 bg-fine-bg px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-fine">
+                Called today
+              </span>
+            ) : (
+              <StatusBadge status={worst.status} />
+            )}
             {owner ? (
               <>
                 <Link
@@ -69,7 +90,9 @@ export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number })
           </div>
 
           <div className="mt-3 space-y-3">
-            {vehicles.map(({ vehicle, actionable: items }) => (
+            {vehicles.map(({ vehicle, actionable: items }) => {
+              const reading = latestReading(vehicle.odometerReadings);
+              return (
               <div key={vehicle.id} className="border-l-2 border-line pl-3">
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <Link
@@ -81,31 +104,50 @@ export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number })
                   <span className="truncate text-[0.6875rem] text-low">{vehicle.model}</span>
                 </div>
 
-                <ul className="mt-1.5 space-y-1.5">
-                  {items.map((item) => (
-                    <li
-                      key={item.itemName}
-                      className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs"
-                    >
-                      <span className="font-medium text-hi">{item.itemName}</span>
-                      <span
-                        className={`nums ${
-                          item.status === "overdue" ? "text-overdue" : "text-due-soon"
-                        }`}
+                <ul className="mt-1.5 space-y-2">
+                  {items.map((item) => {
+                    const definition = vehicle.serviceItems.find(
+                      (candidate) => candidate.name === item.itemName,
+                    );
+                    return (
+                      <li
+                        key={item.itemName}
+                        className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs"
                       >
-                        {formatDayOffset(item.daysUntilDue ?? 0)}
-                      </span>
-                      <span className="text-low">
-                        ({item.dueDate ? formatDate(item.dueDate) : "no date"})
-                      </span>
-                      <span className="nums ml-auto text-mid">{formatBdt(item.costPaisa)}</span>
-                      {/* The reason, verbatim from the engine that produced the date. */}
-                      <span className="w-full text-low">{item.basis}</span>
-                    </li>
-                  ))}
+                        <span className="font-medium text-hi">{item.itemName}</span>
+                        <span
+                          className={`nums ${
+                            item.status === "overdue" ? "text-overdue" : "text-due-soon"
+                          }`}
+                        >
+                          {formatDayOffset(item.daysUntilDue ?? 0)}
+                        </span>
+                        <span className="text-low">
+                          ({item.dueDate ? formatDate(item.dueDate) : "no date"})
+                        </span>
+                        <span className="nums ml-auto text-mid">{formatBdt(item.costPaisa)}</span>
+                        {/* The reason, verbatim from the engine that produced the date. */}
+                        <span className="w-full text-low">{item.basis}</span>
+                        {/* Booked in over the phone? Record it without leaving the list. */}
+                        {definition && (
+                          <div className="no-print w-full">
+                            <RecordServiceForm
+                              vehicleId={vehicle.id}
+                              item={definition}
+                              assessment={item}
+                              asOf={asOf}
+                              currentKm={reading?.km ?? null}
+                              compact
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -122,6 +164,11 @@ export function CallRow({ entry, rank }: { entry: CallListEntry; rank: number })
             <p className="nums mt-0.5 text-[0.6875rem] text-low">
               {actionable.length} {actionable.length === 1 ? "item" : "items"}
             </p>
+            {owner && (
+              <div className="mt-2 flex sm:justify-end">
+                <CalledToggle ownerId={owner.id} called={called} />
+              </div>
+            )}
           </div>
         </div>
       </div>

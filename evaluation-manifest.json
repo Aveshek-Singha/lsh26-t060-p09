@@ -164,7 +164,8 @@
     "Owner names are not unique in the data, so records are keyed by id and the phone number disambiguates.",
     "Unknown vehicle or owner ids return 404; a database outage renders an explanatory panel with retry guidance rather than a blank page.",
     "Empty, loading, success and error states are present throughout; nothing fails silently.",
-    "Owner names are not unique, so the call list groups by owner id rather than name; two different owners sharing a name remain two separate calls."
+    "Owner names are not unique, so the call list groups by owner id rather than name; two different owners sharing a name remain two separate calls.",
+    "A loading skeleton is deliberately absent from /vehicles/[id] and /owners/[id]: a loading boundary makes the subtree stream, so notFound() could no longer set a 404 status. Route groups scope the skeletons to the list pages instead."
   ],
   "testing": {
     "unit_tests": {
@@ -173,9 +174,9 @@
       "covers": "The pure due-date engine: month clamping, zero and negative rates, single-reading vehicles, targets already passed, exact status boundaries, money round-trips, and the ordering rule including its caps."
     },
     "e2e_tests": {
-      "count": 21,
+      "count": 24,
       "command": "npm run test:e2e",
-      "covers": "One block per required feature, plus search and status filtering, the odometer flow, both themes, a 375px viewport, and a missing vehicle returning 404."
+      "covers": "One block per required feature, plus search and status filtering, marking an owner as called, CSV export, recording from the call list, the odometer flow, both themes, a 375px viewport, and a missing vehicle returning 404."
     },
     "constraint_check": {
       "command": "npm run verify:reset",
@@ -190,5 +191,27 @@
   "mocked": {
     "anything_mocked": false,
     "explanation": "Every figure on screen is computed from data in MongoDB and every write goes to the database. Two clarifications: the fleet is seeded sample data (case PUB-01 of the organisers' dataset, with synthetic names and plates), and item costs are the expected price recorded against each item rather than live quotes — the reminder message states this to the customer."
-  }
+  },
+  "workflow_extras": [
+    {
+      "feature": "Record a service from the call list",
+      "note": "The same form as the vehicle page, inline on each due item, so a job booked over the phone is logged without leaving the list."
+    },
+    {
+      "feature": "Mark an owner as called",
+      "note": "Stored against the working date, not a timestamp, so advancing the date correctly brings yesterday's calls back. Called owners sink to the bottom, dimmed and undoable, rather than disappearing."
+    },
+    {
+      "feature": "Print and CSV export",
+      "note": "A print stylesheet drops the chrome and forces a light ground (including in dark mode, where :root and .dark have equal specificity). CSV quotes every field, since reasons and owner names contain commas, and carries a BOM so Excel reads it as UTF-8."
+    },
+    {
+      "feature": "Search and status filters",
+      "note": "Matches owner, phone, plate, model and item; All / Still to call / Overdue / Due soon chips carry their own counts."
+    },
+    {
+      "feature": "Loading skeletons",
+      "note": "Scoped with route groups so they do not wrap routes that call notFound(); a segment-level loading file makes the subtree stream, which would return HTTP 200 for a missing vehicle."
+    }
+  ]
 }
