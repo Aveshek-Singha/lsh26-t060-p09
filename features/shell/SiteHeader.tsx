@@ -26,6 +26,8 @@ export async function SiteHeader() {
 
         <nav className="order-3 flex w-full items-center gap-1 sm:order-none sm:w-auto">
           <NavLink href="/">Call list</NavLink>
+          <NavLink href="/dashboard">Dashboard</NavLink>
+          <NavLink href="/called">Called</NavLink>
           <NavLink href="/vehicles">Vehicles</NavLink>
           <NavLink href="/forecast">Forecast</NavLink>
         </nav>

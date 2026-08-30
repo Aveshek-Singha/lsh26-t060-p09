@@ -36,6 +36,7 @@ function toOwner(doc: OwnerDoc): Owner {
     id: doc._id,
     name: doc.name,
     phone: doc.phone,
+    ...(doc.email ? { email: doc.email } : {}),
     ...(doc.lastCalledOn ? { lastCalledOn: doc.lastCalledOn } : {}),
   };
 }

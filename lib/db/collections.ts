@@ -23,6 +23,8 @@ export interface OwnerDoc {
   _id: string;
   name: string;
   phone: string;
+  /** Demo address on the reserved example.com domain. */
+  email?: string;
   /** Working date this owner was last called on, if ever. */
   lastCalledOn?: CivilDate;
 }

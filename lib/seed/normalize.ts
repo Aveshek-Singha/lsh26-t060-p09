@@ -108,11 +108,49 @@ function normaliseReading(raw: { date: string; km: number }, vehicleId: string):
   };
 }
 
+/**
+ * Demo email addresses for the seeded owners.
+ *
+ * The published dataset carries names and phone numbers but no email, and the
+ * workshop needs somewhere to send a reminder. These are generated from the
+ * name on **example.com** — the domain IANA reserves for documentation, which
+ * accepts no mail — so a demo can never reach a real person by accident.
+ *
+ * Names are not unique in this data (two owners are both "Tanvir Chowdhury"),
+ * so a collision falls back to appending the owner id.
+ */
+function demoEmails(owners: readonly RawOwner[]): Map<string, string> {
+  const taken = new Set<string>();
+  const emails = new Map<string, string>();
+
+  for (const owner of owners) {
+    const slug = owner.name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z\s]/g, "")
+      .trim()
+      .split(/\s+/)
+      .join(".");
+
+    const base = slug || owner.id.toLowerCase();
+    let local = base;
+    if (taken.has(local)) local = `${base}.${owner.id.toLowerCase()}`;
+
+    taken.add(local);
+    emails.set(owner.id, `${local}@example.com`);
+  }
+
+  return emails;
+}
+
 export function normaliseCase(raw: RawCase): NormalisedCase {
+  const emails = demoEmails(raw.owners);
+
   const owners: Owner[] = raw.owners.map((owner) => ({
     id: owner.id,
     name: owner.name,
     phone: owner.phone,
+    email: emails.get(owner.id)!,
   }));
 
   const ownerIds = new Set(owners.map((owner) => owner.id));

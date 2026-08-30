@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import type { CallListEntry } from "@/lib/domain/priority";
 import { formatBdt, sumPaisa } from "@/lib/domain/money";
 import { CallRow } from "./CallRow";
+import { SearchBox } from "./SearchBox";
 
 type StatusFilter = "all" | "overdue" | "due_soon" | "to_call";
 
@@ -78,19 +79,7 @@ export function CallListView({
   return (
     <>
       <div className="no-print mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative min-w-0 flex-1 sm:max-w-xs">
-          <label htmlFor="call-search" className="sr-only">
-            Search by owner, phone, plate, model or item
-          </label>
-          <input
-            id="call-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search plate, owner, phone or item…"
-            className="w-full rounded border border-line bg-surface px-3 py-2 text-sm text-hi placeholder:text-low"
-          />
-        </div>
+        <SearchBox entries={entries} query={query} onQueryChange={setQuery} />
 
         <div className="flex items-center gap-1" role="group" aria-label="Filter by status">
           <FilterChip active={status === "all"} onClick={() => setStatus("all")}>
@@ -141,7 +130,7 @@ export function CallListView({
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded border border-dashed border-line bg-surface px-6 py-12 text-center">
+        <div className="enter-fade rounded border border-dashed border-line bg-surface px-6 py-12 text-center">
           <p className="text-sm font-semibold text-hi">No matching calls</p>
           <p className="mt-1.5 text-sm text-mid">
             Nothing on the call list matches
@@ -161,7 +150,11 @@ export function CallListView({
           </button>
         </div>
       ) : (
-        <ol className="stagger space-y-3">
+        // The stagger is a page-load flourish, not a filter effect. Filtering
+        // re-inserts rows, and a freshly inserted row replays the entrance — so
+        // typing would animate the list on every keystroke that widens the
+        // match. Dropping the class while filtering keeps results instant.
+        <ol className={filtering ? "space-y-3" : "stagger space-y-3"}>
           {visible.map((entry, index) => (
             <CallRow key={entry.key} entry={entry} rank={index + 1} asOf={asOf} />
           ))}

@@ -21,7 +21,10 @@
 
   --text-hi: #16150f;
   --text-mid: #57534e;
-  --text-low: #8a8279;
+  /* 4.62:1 on the ground, the darkest surface it sits on. The previous #8a8279
+     measured 3.33 — under AA — and this token carries the `basis` reason
+     strings, which are the most load-bearing explanatory text in the app. */
+  --text-low: #726b64;
 
   --accent: #b45309;
   --accent-strong: #9a3412;
@@ -33,8 +36,17 @@
   --due-soon-bg: #fdf3e6;
   --fine: #15803d;
   --fine-bg: #ecf7ef;
-  --unknown: #6b7280;
+  --unknown: #666d7a;
   --unknown-bg: #f1f1ef;
+
+  /* Categorical series for the three service rules. An identity, not a
+     magnitude, so distinct hues rather than shades of one. Slots 1-3 of the
+     validated categorical palette, re-checked against this app's own surfaces:
+     all-pairs CVD deltaE 9.2, normal-vision 24.0 on #fbf9f5.
+     Kept separate from the status colours, which are reserved for state. */
+  --rule-fixed: #2a78d6;
+  --rule-time: #eb6834;
+  --rule-distance: #1baf7a;
 
   --shadow: 0 1px 2px rgb(22 21 15 / 0.06);
 }
@@ -52,7 +64,8 @@
 
   --text-hi: #f2f0ed;
   --text-mid: #a8a29e;
-  --text-low: #7a746e;
+  /* 4.60:1 on the raised surface, the lightest it sits on. Was #7a746e at 4.05. */
+  --text-low: #89827c;
 
   --accent: #f5a524;
   --accent-strong: #c2410c;
@@ -66,6 +79,12 @@
   --fine-bg: #0f2419;
   --unknown: #8b8b93;
   --unknown-bg: #1c1c1f;
+
+  /* The same three hues stepped for the dark surface, not an automatic flip.
+     All-pairs CVD deltaE 9.4, normal-vision 20.9, all >= 3:1 on #121214. */
+  --rule-fixed: #3987e5;
+  --rule-time: #d95926;
+  --rule-distance: #199e70;
 
   --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   color-scheme: dark;
@@ -135,16 +154,48 @@ body {
 }
 
 /* Hazard stripe: the visual cue for overdue work, borrowed from the workshop
-   floor. Deliberately faint so it reads as texture, not decoration. */
+   floor.
+   Thin pinstripes rather than wide bands, and confined to a band down the left
+   edge instead of running under the whole card. Wide stripes across the full
+   width competed with the text — the row has to stay readable first and signal
+   second. The status spine carries most of the signal anyway.
+   Painted as a background, so it always sits under the content. */
 .hazard {
   background-image: repeating-linear-gradient(
     -45deg,
-    color-mix(in oklab, var(--overdue) 12%, transparent) 0 6px,
-    transparent 6px 12px
+    color-mix(in oklab, var(--overdue) var(--hazard-strength, 12%), transparent) 0 1.5px,
+    transparent 1.5px 10px
   );
+  background-repeat: no-repeat;
+  background-size: 180px 100%;
 }
 
-/* ---------------------------------------------------------------- motion */
+:root {
+  /* Warm paper takes tint far more readily than oil-black does. */
+  --hazard-strength: 13%;
+}
+
+.dark {
+  --hazard-strength: 22%;
+}
+
+/* ---------------------------------------------------------------- motion
+   Two named curves, used by everything below. The built-in `ease-out` is too
+   weak to read as deliberate at UI durations, so both are the strong variants.
+   `ease-in` appears nowhere: it starts slow, delaying the exact moment the
+   user is watching.
+
+   Only `transform` and `opacity` are animated — they skip layout and paint and
+   run on the GPU. The single exception is `::details-content` height, where no
+   transform equivalent exists. */
+
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* Lets the disclosure below transition to `height: auto`. */
+  interpolate-size: allow-keywords;
+}
 
 @keyframes rise {
   from {
@@ -157,14 +208,23 @@ body {
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .rise {
-  animation: rise 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise 0.26s var(--ease-out) both;
 }
 
 /* One orchestrated page load beats scattered micro-interactions. Rows arrive
    in sequence; the cascade stops after 12 so a long list is not slow to read. */
 .stagger > * {
-  animation: rise 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise 0.26s var(--ease-out) both;
 }
 .stagger > *:nth-child(1) { animation-delay: 0.02s; }
 .stagger > *:nth-child(2) { animation-delay: 0.04s; }
@@ -179,10 +239,93 @@ body {
 .stagger > *:nth-child(11) { animation-delay: 0.22s; }
 .stagger > *:nth-child(n + 12) { animation-delay: 0.24s; }
 
+/* Press feedback — the one gap that mattered: 14 buttons, none of which
+   acknowledged a press, several of which start a server round trip.
+   120ms and scale(0.98) deliberately: these are pressed dozens of times a day,
+   so the press should be *felt*, not watched.
+
+   The colour properties are named alongside `transform` because this rule is
+   unlayered and would otherwise clobber Tailwind's layered `transition-colors`. */
+button:not(:disabled) {
+  transition:
+    transform 120ms var(--ease-out),
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+/* Entrances for content React inserts — the inline service form, the result
+   message after a save. `@starting-style` gives the browser a value to
+   transition from on first render, so this needs no JavaScript. Transitions
+   rather than keyframes, so a rapid re-trigger retargets instead of restarting. */
+.enter {
+  --enter-y: -2px;
+  transition:
+    opacity 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+@starting-style {
+  .enter {
+    opacity: 0;
+    transform: translateY(var(--enter-y));
+  }
+}
+
+/* Fade only, for a panel that replaces a list: sliding in would fight the
+   rows that just left. */
+.enter-fade {
+  transition: opacity 150ms var(--ease-out);
+}
+
+@starting-style {
+  .enter-fade {
+    opacity: 0;
+  }
+}
+
+/* Disclosure, for the sort explainer and the odometer history. Browsers
+   without `::details-content` keep today's instant open — no JS, no polyfill. */
+details::details-content {
+  height: 0;
+  overflow: hidden;
+  transition:
+    height 200ms var(--ease-out),
+    content-visibility 200ms var(--ease-out) allow-discrete;
+}
+
+details[open]::details-content {
+  height: auto;
+}
+
+/* Reduced motion: gentler, not absent. Opacity still bridges every change so
+   nothing teleports; all movement and size change is dropped.
+   The nth-child selectors are matched in kind, otherwise the staggered delays
+   outrank this block and reduced-motion users still wait for the cascade. */
 @media (prefers-reduced-motion: reduce) {
   .rise,
-  .stagger > * {
-    animation: none;
+  .stagger > *:nth-child(n) {
+    animation: fade-in 0.2s ease both;
+    animation-delay: 0s;
+  }
+
+  .enter {
+    --enter-y: 0px;
+    transition-property: opacity;
+  }
+
+  button:not(:disabled):active {
+    transform: none;
+  }
+
+  details::details-content,
+  details[open]::details-content {
+    transition: none;
   }
 }
 

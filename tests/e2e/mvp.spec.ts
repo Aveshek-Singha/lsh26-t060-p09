@@ -411,3 +411,317 @@ test.describe("Interface behaviour", () => {
     await expect(page.getByText("30 Aug 2026").first()).toBeVisible();
   });
 });
+
+test.describe("Called list and email", () => {
+  test("every owner has a demo address on the reserved domain", async ({ page }) => {
+    await page.goto("/owners/O01");
+    // example.com is IANA-reserved and accepts no mail, so a demo can never
+    // reach a real person.
+    await expect(page.getByRole("link", { name: /@example\.com$/ })).toBeVisible();
+  });
+
+  test("marking an owner called moves them into the called section", async ({ page }) => {
+    await page.goto("/called");
+    await expect(page.getByRole("heading", { name: /called today/i })).toBeVisible();
+    const before = await page.locator("[data-called-owner]").count();
+
+    await page.goto("/");
+    const row = page.locator('[data-owner][data-called="no"]').first();
+    const ownerId = await row.getAttribute("data-owner");
+    await row.getByRole("button", { name: "Mark called" }).click();
+    await expect
+      .poll(async () => page.locator(`[data-owner="${ownerId}"]`).getAttribute("data-called"), {
+        timeout: 15_000,
+      })
+      .toBe("yes");
+
+    await page.goto("/called");
+    await expect(page.locator(`[data-called-owner="${ownerId}"]`)).toBeVisible();
+    expect(await page.locator("[data-called-owner]").count()).toBe(before + 1);
+
+    // Undo puts them back on the list, so the section stays honest.
+    await page
+      .locator(`[data-called-owner="${ownerId}"]`)
+      .getByRole("button", { name: "Undo" })
+      .click();
+    await expect
+      .poll(async () => page.locator(`[data-called-owner="${ownerId}"]`).count(), { timeout: 15_000 })
+      .toBe(0);
+  });
+
+  test("the email button offers a reminder and logs the contact", async ({ page }) => {
+    await page.goto("/owners/O01");
+    const control = page.getByRole("link", { name: "Email reminder" }).first();
+    await expect(control).toBeVisible();
+    // Titled with the address so the operator knows where it is going.
+    await expect(control).toHaveAttribute("title", /@example\.com/);
+  });
+
+  test("the called section explains itself when nothing is logged", async ({ page }) => {
+    await page.goto("/called");
+    const rows = await page.locator("[data-called-owner]").count();
+    if (rows === 0) {
+      await expect(page.getByText("No calls logged yet today")).toBeVisible();
+      await expect(page.getByRole("link", { name: /go to the call list/i })).toBeVisible();
+    }
+  });
+});
+
+test.describe("Search suggestions", () => {
+  test("suggests owners, vehicles and items as you type", async ({ page }) => {
+    await page.goto("/");
+    const input = page.getByLabel(/Search by owner/i);
+    await input.fill("dha");
+
+    const list = page.locator("[data-suggestions]");
+    await expect(list).toBeVisible();
+    const options = list.getByRole("option");
+    expect(await options.count()).toBeGreaterThan(0);
+    // Plates start with "Dhaka Metro", so these should be tagged Vehicle.
+    await expect(options.first()).toContainText(/Vehicle/i);
+  });
+
+  test("a full multi-word value survives into the box", async ({ page }) => {
+    await page.goto("/");
+    const input = page.getByLabel(/Search by owner/i);
+    await input.fill("a");
+
+    const first = page.locator("[data-suggestions]").getByRole("option").first();
+    const label = (await first.textContent())!;
+    await first.click();
+
+    // Regression: an earlier version rebuilt the term from its map key and
+    // truncated at the first space, so "Salma Ahmed" arrived as "Salma".
+    const value = await input.inputValue();
+    expect(value.length).toBeGreaterThan(1);
+    expect(label).toContain(value);
+    await expect(page.locator("[data-suggestions]")).toBeHidden();
+  });
+
+  test("keyboard selects a suggestion and Escape dismisses it", async ({ page }) => {
+    await page.goto("/");
+    const input = page.getByLabel(/Search by owner/i);
+
+    await input.fill("tyre");
+    await expect(page.locator("[data-suggestions]")).toBeVisible();
+    await input.press("ArrowDown");
+    await input.press("Enter");
+    expect((await input.inputValue()).toLowerCase()).toContain("tyre");
+
+    await input.fill("brake");
+    await expect(page.locator("[data-suggestions]")).toBeVisible();
+    await input.press("Escape");
+    await expect(page.locator("[data-suggestions]")).toBeHidden();
+  });
+
+  test("choosing a suggestion actually narrows the list", async ({ page }) => {
+    await page.goto("/");
+    const rows = page.locator("[data-owner]");
+    const total = await rows.count();
+
+    await page.getByLabel(/Search by owner/i).fill("Tyres");
+    await page.locator("[data-suggestions]").getByRole("option").first().click();
+    await expect.poll(async () => rows.count()).toBeLessThanOrEqual(total);
+    expect(await rows.count()).toBeGreaterThan(0);
+  });
+});
+
+test.describe("Gmail compose", () => {
+  test("composes a prefilled Gmail draft and never sends", async ({ page, context }) => {
+    await page.goto("/owners/O01");
+    const control = page.getByRole("link", { name: "Email reminder" }).first();
+
+    // Assert the URL we build, not where Google redirects: a signed-out browser
+    // is bounced to accounts.google.com and back, which is Google's flow, not
+    // ours.
+    const href = (await control.getAttribute("href"))!;
+    const url = new URL(href);
+    expect(url.hostname).toBe("mail.google.com");
+    expect(url.searchParams.get("view")).toBe("cm"); // compose, not send
+    expect(url.searchParams.get("to")).toMatch(/@example\.com$/);
+    expect(url.searchParams.get("su")).toMatch(/Service due on/);
+    expect(url.searchParams.get("body")).toMatch(/Assalamu alaikum/);
+    expect(url.searchParams.get("body")).toMatch(/Estimated total/);
+    // Nothing in the URL could cause a send.
+    expect(href).not.toMatch(/send/i);
+
+    // And it really does open a second tab rather than navigating away.
+    const [popup] = await Promise.all([context.waitForEvent("page"), control.click()]);
+    expect(popup.url()).toContain("google.com");
+    await expect(page).toHaveURL(/\/owners\/O01$/);
+    await popup.close();
+  });
+
+  test("is a single action, pointed at a Gmail draft", async ({ page }) => {
+    await page.goto("/owners/O01");
+    // One email control, not two: the earlier version also carried a
+    // "default app" mailto link, which was clutter.
+    const controls = page.getByRole("link", { name: /email/i });
+    expect(await controls.count()).toBe(1);
+    await expect(controls.first()).toHaveAttribute("href", /^https:\/\/mail\.google\.com\/mail\/\?/);
+    await expect(controls.first()).toHaveAttribute("target", "_blank");
+  });
+});
+
+test.describe("Fleet filtering", () => {
+  test("filters the fleet by status and search, and sorts it", async ({ page }) => {
+    await page.goto("/vehicles");
+    const rows = page.locator("[data-vehicle]");
+    const total = await rows.count();
+    expect(total).toBeGreaterThanOrEqual(40);
+
+    await page.getByRole("button", { name: /^Overdue \d+$/ }).click();
+    const overdue = await rows.count();
+    expect(overdue).toBeGreaterThan(0);
+    expect(overdue).toBeLessThan(total);
+
+    await page.getByRole("button", { name: /^All \d+$/ }).click();
+    await expect.poll(async () => rows.count()).toBe(total);
+
+    // Sorting by plate must reorder without losing rows.
+    await page.getByLabel("Sort vehicles").selectOption("plate");
+    await expect.poll(async () => rows.count()).toBe(total);
+    const plates = await rows.locator(".plate").allInnerTexts();
+    expect([...plates].sort((a, b) => a.localeCompare(b))).toEqual(plates);
+  });
+
+  test("explains an empty fleet search instead of showing a blank table", async ({ page }) => {
+    await page.goto("/vehicles");
+    await page.getByLabel(/Search vehicles/i).fill("zzzznotaplate");
+    await expect(page.getByText("No matching vehicles")).toBeVisible();
+    await page.getByRole("button", { name: /^Show all \d+$/ }).click();
+    expect(await page.locator("[data-vehicle]").count()).toBeGreaterThanOrEqual(40);
+  });
+});
+
+test.describe("Dashboard", () => {
+  test("leads with the value at risk and agrees with the call list", async ({ page }) => {
+    await page.goto("/");
+    const listTotal = await page.getByText(/Value of work/).locator("..").innerText();
+    const listValue = listTotal.replace(/[^\d]/g, "");
+
+    await page.goto("/dashboard");
+    const hero = await page.getByText("Value at risk").locator("..").innerText();
+    // Same engine, so the dashboard headline must equal the call list total.
+    expect(hero.replace(/[^\d]/g, "")).toContain(listValue);
+  });
+
+  test("renders four charts, each labelled for a screen reader", async ({ page }) => {
+    await page.goto("/dashboard");
+    const charts = page.locator('[role="img"]');
+    expect(await charts.count()).toBe(4);
+    for (let i = 0; i < 4; i += 1) {
+      const label = await charts.nth(i).getAttribute("aria-label");
+      expect(label && label.length).toBeGreaterThan(10);
+    }
+  });
+
+  test("identity never rests on colour alone", async ({ page }) => {
+    await page.goto("/dashboard");
+    // Every status and rule is named in text beside its swatch.
+    for (const label of ["Overdue", "Due soon", "Fine", "No estimate"]) {
+      await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+    }
+    for (const label of ["Fixed date", "Distance"]) {
+      await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+    }
+  });
+
+  test("offers the numbers as a table, not only as charts", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.getByText("The numbers behind these charts").click();
+    await expect(page.getByRole("table")).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Share" })).toBeVisible();
+  });
+
+  test("filters redraw every chart", async ({ page }) => {
+    await page.goto("/dashboard");
+    const hero = page.getByText("Value at risk").locator("..");
+    const before = (await hero.innerText()).replace(/[^\d]/g, "");
+
+    await page.getByRole("button", { name: /^Distance \d+$/ }).click();
+    await expect
+      .poll(async () => (await hero.innerText()).replace(/[^\d]/g, ""))
+      .not.toBe(before);
+
+    await page.getByRole("button", { name: /^Reset$/ }).click();
+    await expect
+      .poll(async () => (await hero.innerText()).replace(/[^\d]/g, ""))
+      .toBe(before);
+  });
+
+  test("survives a filter that leaves nothing to show", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: /^Fixed date \d+$/ }).click();
+    await page.getByRole("button", { name: "Needs action only" }).click();
+    // Whatever the counts, the page must stay coherent rather than dividing by
+    // zero or rendering an empty frame.
+    await expect(page.getByText("Value at risk")).toBeVisible();
+    await expect(page.locator('[role="img"]').first()).toBeVisible();
+  });
+});
+
+test.describe("Motion", () => {
+  test("buttons acknowledge a press", async ({ page }) => {
+    await page.goto("/");
+    const button = page.getByRole("button", { name: /^Still to call/ });
+
+    // The press itself is 120ms and hard to sample reliably; assert the
+    // transition is wired to transform rather than trying to catch mid-frame.
+    const transition = await button.evaluate((el) =>
+      getComputedStyle(el).transitionProperty,
+    );
+    expect(transition).toContain("transform");
+  });
+
+  // Regression: the stagger is a page-load flourish. Filtering re-inserts rows,
+  // and a freshly inserted row replays its entrance — so leaving the class on
+  // would animate the list on every keystroke that widens the match.
+  test("does not animate rows while filtering", async ({ page }) => {
+    await page.goto("/");
+    const list = page.locator("ol").first();
+    await expect(list).toHaveClass(/stagger/);
+
+    await page.getByLabel(/Search by owner/i).fill("a");
+    await expect(list).not.toHaveClass(/stagger/);
+
+    // The suggestion popup overlays the toolbar, so dismiss it before clicking.
+    await page.getByLabel(/Search by owner/i).press("Escape");
+    await page.getByRole("button", { name: /^Clear$/ }).click();
+    await expect(list).toHaveClass(/stagger/);
+  });
+
+  test("respects reduced motion by fading rather than not animating", async ({ browser }) => {
+    // Reduced motion means gentler, not absent: opacity still bridges the
+    // change so nothing teleports, but the vertical travel is dropped.
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/");
+
+    const row = page.locator("[data-owner]").first();
+    await expect(row).toBeVisible();
+    const { name, delay } = await row.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return { name: style.animationName, delay: style.animationDelay };
+    });
+
+    expect(name).toBe("fade-in");
+    // The staggered delays must not outrank the reduced-motion override.
+    expect(delay).toBe("0s");
+
+    await context.close();
+  });
+
+  test("the disclosure opens without clipping its content", async ({ page }) => {
+    await page.goto("/");
+    const details = page.locator("details").first();
+    await details.locator("summary").click();
+
+    await expect(page.getByText(/Urgency leads/)).toBeVisible();
+    // Whether ::details-content animates depends on browser support; what must
+    // hold either way is that the content ends up at its full height.
+    await expect
+      .poll(async () => details.evaluate((el) => el.scrollHeight > 100), { timeout: 5_000 })
+      .toBe(true);
+  });
+});

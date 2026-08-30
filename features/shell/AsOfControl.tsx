@@ -51,8 +51,10 @@ export function AsOfControl({ asOfDate }: { asOfDate: string }) {
           Recalculating…
         </span>
       )}
+      {/* enter-fade rather than enter: `transform` does not apply to a
+          non-replaced inline element, so a translate would be dropped here. */}
       {state && !state.ok && (
-        <span className="text-xs text-overdue" role="alert">
+        <span className="enter-fade text-xs text-overdue" role="alert">
           {state.message}
         </span>
       )}

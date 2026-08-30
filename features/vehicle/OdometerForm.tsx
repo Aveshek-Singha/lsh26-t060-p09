@@ -55,7 +55,7 @@ export function OdometerForm({
   return (
     <form
       action={formAction}
-      className="w-full rounded border border-accent/40 bg-raised p-3"
+      className="enter w-full rounded border border-accent/40 bg-raised p-3"
       aria-label="Add odometer reading"
     >
       <input type="hidden" name="vehicleId" value={vehicleId} />
@@ -103,7 +103,7 @@ export function OdometerForm({
       {state && (
         <p
           role={state.ok ? "status" : "alert"}
-          className={`mt-3 rounded px-2 py-1.5 text-xs ${
+          className={`enter mt-3 rounded px-2 py-1.5 text-xs ${
             state.ok ? "bg-fine-bg text-fine" : "bg-overdue-bg text-overdue"
           }`}
         >

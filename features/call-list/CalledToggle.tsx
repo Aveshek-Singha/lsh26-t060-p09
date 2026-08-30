@@ -41,7 +41,7 @@ export function CalledToggle({ ownerId, called }: { ownerId: string; called: boo
         {pending ? "Saving…" : called ? "Undo" : "Mark called"}
       </button>
       {state && !state.ok && (
-        <p role="alert" className="mt-1 text-[0.6875rem] text-overdue">
+        <p role="alert" className="enter mt-1 text-[0.6875rem] text-overdue">
           {state.message}
         </p>
       )}

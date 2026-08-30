@@ -82,7 +82,7 @@ export default async function ForecastPage() {
                   aria-label={`${week.count} items due, ${formatBdt(week.valuePaisa)}`}
                 >
                   <div
-                    className={`flex h-full items-center rounded px-2 transition-[width] ${
+                    className={`flex h-full items-center rounded px-2 ${
                       busiest ? "bg-accent" : "bg-accent/35"
                     }`}
                     style={{ width: `${Math.max(share, week.count > 0 ? 8 : 0)}%` }}

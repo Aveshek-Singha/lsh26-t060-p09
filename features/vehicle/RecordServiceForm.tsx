@@ -62,7 +62,9 @@ export function RecordServiceForm({
         aria-label={`Record service for ${item.name}`}
         className={
           compact
-            ? "mt-0.5 rounded border border-line px-2 py-0.5 text-[0.6875rem] font-medium text-mid transition-colors hover:border-accent hover:text-accent"
+            ? // min-h keeps the touch target usable on a phone without making
+              // the button visually heavier in a dense list.
+              "mt-0.5 inline-flex min-h-7 items-center rounded border border-line px-2.5 py-1 text-[0.6875rem] font-medium text-mid transition-colors hover:border-accent hover:text-accent"
             : "rounded border border-line bg-raised px-2.5 py-1.5 text-xs font-medium text-hi transition-colors hover:border-accent hover:text-accent"
         }
       >
@@ -74,7 +76,7 @@ export function RecordServiceForm({
   return (
     <form
       action={formAction}
-      className="mt-3 w-full rounded border border-accent/40 bg-raised p-3"
+      className="enter mt-3 w-full rounded border border-accent/40 bg-raised p-3"
       aria-label={`Record service for ${item.name}`}
     >
       <input type="hidden" name="vehicleId" value={vehicleId} />
@@ -150,7 +152,7 @@ export function RecordServiceForm({
       {state && (
         <p
           role={state.ok ? "status" : "alert"}
-          className={`mt-3 rounded px-2 py-1.5 text-xs ${
+          className={`enter mt-3 rounded px-2 py-1.5 text-xs ${
             state.ok ? "bg-fine-bg text-fine" : "bg-overdue-bg text-overdue"
           }`}
         >

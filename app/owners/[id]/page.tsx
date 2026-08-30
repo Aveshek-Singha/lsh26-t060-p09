@@ -8,7 +8,8 @@ import { formatBdt, sumPaisa } from "@/lib/domain/money";
 import { StatusBadge } from "@/features/ui/StatusBadge";
 import { ErrorPanel } from "@/features/ui/states";
 import { ReminderMessage } from "@/features/owner/ReminderMessage";
-import { buildReminder } from "@/features/owner/reminder";
+import { buildMailDraft, buildReminder, buildReminderSubject } from "@/features/owner/reminder";
+import { MailButton } from "@/features/owner/MailButton";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function OwnerPage({ params }: { params: Promise<{ id: stri
   );
   const actionableCount = work.reduce((sum, entry) => sum + entry.actionable.length, 0);
   const reminder = buildReminder(owner, work, asOf);
+  const draft = buildMailDraft(owner.email ?? "", buildReminderSubject(work), reminder);
 
   return (
     <>
@@ -63,6 +65,17 @@ export default async function OwnerPage({ params }: { params: Promise<{ id: stri
             <a href={`tel:${owner.phone}`} className="nums text-accent underline-offset-4 hover:underline">
               {owner.phone}
             </a>
+            {owner.email && (
+              <>
+                {" · "}
+                <a
+                  href={`mailto:${owner.email}`}
+                  className="text-accent underline-offset-4 hover:underline"
+                >
+                  {owner.email}
+                </a>
+              </>
+            )}
             <span className="text-low">
               {" · "}
               {vehicles.length} {vehicles.length === 1 ? "vehicle" : "vehicles"}
@@ -136,7 +149,22 @@ export default async function OwnerPage({ params }: { params: Promise<{ id: stri
               </p>
             </div>
           ) : (
-            <ReminderMessage message={reminder} />
+            <div className="space-y-3">
+              <div className="rounded border border-line bg-surface px-4 py-3">
+                <p className="eyebrow mb-2">Send it</p>
+                <MailButton
+                  ownerId={owner.id}
+                  email={owner.email}
+                  gmailHref={draft.gmailHref}
+                  truncated={draft.truncated}
+                />
+                <p className="mt-2 text-[0.6875rem] text-low">
+                  Opens your mail client with this message already written, and logs
+                  the owner as contacted.
+                </p>
+              </div>
+              <ReminderMessage message={reminder} />
+            </div>
           )}
         </aside>
       </div>

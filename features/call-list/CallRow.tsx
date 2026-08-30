@@ -7,6 +7,8 @@ import { StatusBadge } from "@/features/ui/StatusBadge";
 import { RecordServiceForm } from "@/features/vehicle/RecordServiceForm";
 import { latestReading } from "@/lib/domain/rate";
 import { CalledToggle } from "./CalledToggle";
+import { MailButton } from "@/features/owner/MailButton";
+import { buildMailDraft, buildReminder, buildReminderSubject } from "@/features/owner/reminder";
 
 /**
  * One phone call.
@@ -31,9 +33,21 @@ export function CallRow({
   // again, which is what a daily worklist should do.
   const called = owner?.lastCalledOn === asOf;
 
+  // The same reminder the owner page shows, handed to the mail client as a
+  // ready-written draft so the workshop never retypes it.
+  const work = vehicles.map(({ vehicle, actionable: items }) => ({
+    vehicle,
+    actionable: items,
+  }));
+  const draft = owner
+    ? buildMailDraft(owner.email ?? "", buildReminderSubject(work), buildReminder(owner, work, asOf))
+    : null;
+
   return (
     <li
-      className={`relative rounded border border-line bg-surface transition-colors hover:border-line-strong ${
+      // `transition-colors` alone excludes opacity, so marking an owner called
+      // snapped the row to dim. Naming opacity lets the state change read.
+      className={`relative rounded border border-line bg-surface transition-[color,background-color,border-color,opacity] duration-200 ease-out hover:border-line-strong ${
         isOverdue && !called ? "hazard" : ""
       } ${called ? "opacity-55" : ""}`}
       data-owner={owner?.id ?? "unknown"}
@@ -110,37 +124,47 @@ export function CallRow({
                       (candidate) => candidate.name === item.itemName,
                     );
                     return (
+                      // Two rows, not three: the reason and the action share a
+                      // line, which takes a whole line back per item. With five
+                      // items on a call that is five fewer lines to scroll past.
                       <li
                         key={item.itemName}
-                        className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs"
+                        className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 text-xs"
                       >
-                        <span className="font-medium text-hi">{item.itemName}</span>
-                        <span
-                          className={`nums ${
-                            item.status === "overdue" ? "text-overdue" : "text-due-soon"
-                          }`}
-                        >
-                          {formatDayOffset(item.daysUntilDue ?? 0)}
+                        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                          <span className="font-medium text-hi">{item.itemName}</span>
+                          <span
+                            className={`nums ${
+                              item.status === "overdue" ? "text-overdue" : "text-due-soon"
+                            }`}
+                          >
+                            {formatDayOffset(item.daysUntilDue ?? 0)}
+                          </span>
+                          <span className="text-low">
+                            ({item.dueDate ? formatDate(item.dueDate) : "no date"})
+                          </span>
+                        </div>
+                        <span className="nums whitespace-nowrap text-mid">
+                          {formatBdt(item.costPaisa)}
                         </span>
-                        <span className="text-low">
-                          ({item.dueDate ? formatDate(item.dueDate) : "no date"})
-                        </span>
-                        <span className="nums ml-auto text-mid">{formatBdt(item.costPaisa)}</span>
-                        {/* The reason, verbatim from the engine that produced the date. */}
-                        <span className="w-full text-low">{item.basis}</span>
-                        {/* Booked in over the phone? Record it without leaving the list. */}
-                        {definition && (
-                          <div className="no-print w-full">
-                            <RecordServiceForm
-                              vehicleId={vehicle.id}
-                              item={definition}
-                              assessment={item}
-                              asOf={asOf}
-                              currentKm={reading?.km ?? null}
-                              compact
-                            />
-                          </div>
-                        )}
+
+                        <div className="col-span-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                          {/* The reason, verbatim from the engine that produced the date. */}
+                          <span className="min-w-0 text-low">{item.basis}</span>
+                          {/* Booked in over the phone? Record it without leaving the list. */}
+                          {definition && (
+                            <div className="no-print">
+                              <RecordServiceForm
+                                vehicleId={vehicle.id}
+                                item={definition}
+                                assessment={item}
+                                asOf={asOf}
+                                currentKm={reading?.km ?? null}
+                                compact
+                              />
+                            </div>
+                          )}
+                        </div>
                       </li>
                     );
                   })}
@@ -165,7 +189,16 @@ export function CallRow({
               {actionable.length} {actionable.length === 1 ? "item" : "items"}
             </p>
             {owner && (
-              <div className="mt-2 flex sm:justify-end">
+              <div className="mt-2 flex flex-wrap gap-2 sm:justify-end">
+                {draft && (
+                  <MailButton
+                    ownerId={owner.id}
+                    email={owner.email}
+                    gmailHref={draft.gmailHref}
+                    truncated={draft.truncated}
+                    compact
+                  />
+                )}
                 <CalledToggle ownerId={owner.id} called={called} />
               </div>
             )}

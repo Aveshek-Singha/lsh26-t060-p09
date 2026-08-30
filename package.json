@@ -15,7 +15,8 @@
     "test:e2e": "playwright test",
     "check:db": "tsx --env-file=.env.local scripts/check-connection.ts",
     "check:cloudinary": "tsx --env-file=.env.local scripts/check-cloudinary.ts",
-    "verify:reset": "tsx --env-file=.env.local scripts/verify-reset.ts"
+    "verify:reset": "tsx --env-file=.env.local scripts/verify-reset.ts",
+    "check:emails": "tsx --env-file=.env.local scripts/check-emails.ts"
   },
   "dependencies": {
     "mongodb": "7.6.0",

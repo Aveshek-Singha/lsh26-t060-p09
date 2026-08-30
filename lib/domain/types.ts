@@ -45,6 +45,12 @@ export interface Owner {
   name: string;
   phone: string;
   /**
+   * Demo address only. The seed generates these on `example.com`, which IANA
+   * reserves for documentation and which cannot receive mail — so nothing here
+   * can reach a real person by accident.
+   */
+  email?: string;
+  /**
    * The working date on which this owner was last rung. Compared against the
    * current working date to decide whether they still need a call today, so
    * moving the working date forward correctly makes yesterday's calls due again.

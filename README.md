@@ -45,17 +45,40 @@ to go`, or `Last done 26 Feb 2026 + 6 months`. Nothing is a black box.
 - [x] **Odometer entry** that recalculates every distance-based estimate on the vehicle.
 - [x] **Copy-ready reminder message** per owner, naming the items due and the cost.
 
-### Workflow extras
+### Beyond the brief
 
 Built after the four required features were complete and tested:
 
+- **Dashboard** (`/dashboard`) — fleet health, work by rule, the eight-week
+  workload and outstanding value by item, with filters that redraw every chart
+  and a table view of the same numbers.
+- **Called today** (`/called`) — the day's contact record, with undo.
+- **Email reminder** — opens a prefilled Gmail draft (recipient, subject, body)
+  and logs the owner as contacted. It never sends automatically.
+- **Search with suggestions** on the call list, and **status filters plus sorting**
+  on the fleet.
 - **Record a service from the call list**, without opening the vehicle page.
 - **Mark an owner as called** — stored against the working date, so advancing the
-  date brings yesterday's calls back. Called owners sink to the bottom, dimmed
-  and undoable, rather than vanishing.
-- **Search and status filters** over owner, phone, plate, model and item.
+  date brings yesterday's calls back.
 - **Print and CSV export** of the day's list.
 - **Loading skeletons** on the list pages.
+
+## Email
+
+The email button opens a **Gmail compose draft** with the recipient, subject and
+body already written, and logs the owner as contacted. **Nothing is sent
+automatically** — the operator reads the message and presses Send.
+
+That is a deliberate choice, not a shortcut. The event supplied no mail
+credential, and the seeded addresses are on `example.com`, the domain IANA
+reserves for documentation, which accepts no mail — so an automatic send could
+only ever bounce. Composing in the operator's own account also means replies come
+back to them.
+
+Owner addresses are **generated demo data**, derived from the name
+(`salma.ahmed@example.com`). Two owners in the dataset share a name, so
+collisions fall back to appending the owner id. `npm run check:emails` verifies
+every owner has a unique one.
 
 ## How the call list is ordered
 
@@ -112,9 +135,10 @@ npm run dev                    # http://localhost:3000
 | Command | What it does |
 |---|---|
 | `npm run check:db` | Verifies the Atlas connection and reports what is seeded |
+| `npm run check:emails` | Confirms every owner carries a unique demo address |
 | `npm run seed` | Resets the fleet to the seeded state (idempotent) |
-| `npm test` | 55 unit tests over the pure due-date engine |
-| `npm run test:e2e` | 24 end-to-end tests, one block per required feature |
+| `npm test` | 76 unit tests over the pure due-date engine |
+| `npm run test:e2e` | 46 end-to-end tests, one block per required feature |
 | `npm run verify:reset` | Proves against the real database that recording a service resets one item only |
 | `npm run build` | Production build |
 
@@ -147,7 +171,7 @@ Two things are worth stating plainly:
 ## Architecture
 
 ```
-lib/domain/     pure due-date engine — no database, no React, fully unit tested
+lib/domain/     pure due-date engine and statistics — no database, no React
 lib/db/         MongoDB client, collections, repository (all queries and writes)
 lib/seed/       loads and normalises the seed case
 actions/        server actions: record service, add reading, set working date
@@ -180,11 +204,11 @@ _Not yet deployed._
 
 79 automated tests, all passing:
 
-- **55 unit tests** over the engine — month-end clamping, zero and negative
+- **76 unit tests** over the engine and the dashboard statistics — month-end clamping, zero and negative
   running rates, single-reading vehicles, targets already passed, the exact
   overdue/due-soon boundaries, money round-trips, and the ordering rule
   including its caps.
-- **24 end-to-end tests** — one block per required feature, plus the odometer
+- **46 end-to-end tests** — one block per required feature, plus the odometer
   flow, both themes, a 375 px viewport, and a missing vehicle returning 404.
 
 `npm run verify:reset` additionally checks the single-item reset constraint
