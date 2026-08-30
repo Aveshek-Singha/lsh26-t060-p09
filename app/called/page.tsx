@@ -85,7 +85,7 @@ export default async function CalledPage() {
                 <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                      <span className="inline-flex shrink-0 items-center rounded border border-fine/30 bg-fine-bg px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-fine">
+                      <span className="inline-flex shrink-0 items-center rounded border border-fine/30 bg-fine-bg px-1.5 py-0.5 text-[0.875rem] font-semibold uppercase tracking-wide text-fine">
                         Called
                       </span>
                       <Link

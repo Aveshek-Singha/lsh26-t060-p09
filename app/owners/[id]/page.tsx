@@ -188,7 +188,7 @@ export default async function OwnerPage({ params }: { params: Promise<{ id: stri
                   gmailHref={draft.gmailHref}
                   truncated={draft.truncated}
                 />
-                <p className="mt-2 text-[0.6875rem] text-low">
+                <p className="mt-2 text-[0.875rem] text-low">
                   Opens your mail client with this message already written, and logs
                   the owner as contacted.
                 </p>

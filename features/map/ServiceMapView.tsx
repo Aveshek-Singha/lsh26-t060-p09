@@ -78,7 +78,7 @@ export function ServiceMapView({ areas, pins }: { areas: AreaGroup[]; pins: MapP
               {route ? formatMinutes(route.minutes) : "—"}
             </p>
           </div>
-          <p className="w-full text-[0.6875rem] text-low sm:w-auto">
+          <p className="w-full text-[0.875rem] text-low sm:w-auto">
             {route?.source === "road"
               ? "Measured road route"
               : "Straight-line estimate — the routing service did not answer"}
@@ -158,19 +158,19 @@ export function ServiceMapView({ areas, pins }: { areas: AreaGroup[]; pins: MapP
                         >
                           {customer.name}
                         </button>
-                        <p className="truncate text-[0.6875rem] text-low">
+                        <p className="truncate text-[0.875rem] text-low">
                           {customer.location.address}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="nums text-[0.6875rem] text-low">
+                      <span className="nums text-[0.875rem] text-low">
                         {customer.itemCount} · {formatBdt(customer.valuePaisa)}
                       </span>
                       <Link
                         href={`/owners/${customer.ownerId}`}
-                        className="text-[0.6875rem] text-mid underline-offset-4 hover:text-hi hover:underline"
+                        className="text-[0.875rem] text-mid underline-offset-4 hover:text-hi hover:underline"
                       >
                         open
                       </Link>

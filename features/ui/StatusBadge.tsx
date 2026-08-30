@@ -27,7 +27,7 @@ export function StatusBadge({ status, className = "" }: { status: DueStatus; cla
   const style = STYLES[status];
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide ${style.className} ${className}`}
+      className={`inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[0.875rem] font-semibold uppercase tracking-wide ${style.className} ${className}`}
     >
       {style.label}
     </span>

@@ -83,7 +83,7 @@ export default async function ForecastPage() {
                   >
                     {week.count > 0 && (
                       <span
-                        className={`nums text-[0.6875rem] font-semibold ${
+                        className={`nums text-[0.875rem] font-semibold ${
                           busiest ? "text-accent-contrast" : "text-hi"
                         }`}
                       >

@@ -49,7 +49,7 @@ export function MailButton({
 
   if (!email) {
     return (
-      <span className={`text-low ${compact ? "text-[0.6875rem]" : "text-xs"}`}>
+      <span className={`text-low ${compact ? "text-[0.875rem]" : "text-xs"}`}>
         No email on file
       </span>
     );
@@ -68,7 +68,7 @@ export function MailButton({
         onClick={() => formRef.current?.requestSubmit()}
         className={
           compact
-            ? "inline-flex min-h-7 items-center rounded border border-line px-2.5 py-1 text-[0.6875rem] font-medium text-mid transition-colors hover:border-accent hover:text-accent"
+            ? "inline-flex min-h-7 items-center rounded border border-line px-2.5 py-1 text-[0.875rem] font-medium text-mid transition-colors hover:border-accent hover:text-accent"
             : "inline-flex min-h-8 items-center rounded border border-line bg-raised px-3 py-1.5 text-xs font-medium text-hi transition-colors hover:border-accent hover:text-accent"
         }
       >
@@ -77,7 +77,7 @@ export function MailButton({
 
       {truncated && (
         <span
-          className={`text-low ${compact ? "text-[0.6875rem]" : "text-xs"}`}
+          className={`text-low ${compact ? "text-[0.875rem]" : "text-xs"}`}
           title="Shortened to stay inside the mail client's URL length limit"
         >
           shortened
@@ -85,7 +85,7 @@ export function MailButton({
       )}
 
       {state && !state.ok && (
-        <span role="alert" className="enter-fade text-[0.6875rem] text-overdue">
+        <span role="alert" className="enter-fade text-[0.875rem] text-overdue">
           {state.message}
         </span>
       )}

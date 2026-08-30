@@ -238,7 +238,7 @@ function Th({ children, align }: { children: React.ReactNode; align?: "right" })
   return (
     <th
       scope="col"
-      className={`px-3 py-2.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-low ${
+      className={`px-3 py-2.5 text-[0.875rem] font-semibold uppercase tracking-wide text-low ${
         align === "right" ? "text-right" : ""
       }`}
     >

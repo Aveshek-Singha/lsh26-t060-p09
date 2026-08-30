@@ -160,7 +160,7 @@ export default async function VehiclePage({
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge status={assessment.status} />
                       <span className="text-sm font-semibold text-hi">{assessment.itemName}</span>
-                      <span className="rounded bg-raised px-1.5 py-0.5 text-[0.625rem] uppercase tracking-wide text-low">
+                      <span className="rounded bg-raised px-1.5 py-0.5 text-[0.8125rem] uppercase tracking-wide text-low">
                         {ruleLabel(assessment.rule)}
                       </span>
                     </div>
@@ -173,7 +173,7 @@ export default async function VehiclePage({
                         {assessment.dueDate ? formatDate(assessment.dueDate) : "—"}
                       </p>
                       <p
-                        className={`nums text-[0.6875rem] ${
+                        className={`nums text-[0.875rem] ${
                           assessment.status === "overdue"
                             ? "text-overdue"
                             : assessment.status === "due_soon"
@@ -274,7 +274,7 @@ function Th({ children, align }: { children: React.ReactNode; align?: "right" })
   return (
     <th
       scope="col"
-      className={`px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-low ${
+      className={`px-3 py-2 text-[0.875rem] font-semibold uppercase tracking-wide text-low ${
         align === "right" ? "text-right" : ""
       }`}
     >

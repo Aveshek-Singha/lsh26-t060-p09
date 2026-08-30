@@ -173,11 +173,11 @@ export function SearchBox({
                   index === active ? "bg-surface text-hi" : "text-mid"
                 }`}
               >
-                <span className="shrink-0 rounded border border-line px-1 py-0.5 text-[0.625rem] uppercase tracking-wide text-low">
+                <span className="shrink-0 rounded border border-line px-1 py-0.5 text-[0.8125rem] uppercase tracking-wide text-low">
                   {s.kind}
                 </span>
                 <Highlighted text={s.value} query={query} />
-                <span className="nums ml-auto shrink-0 text-[0.6875rem] text-low">
+                <span className="nums ml-auto shrink-0 text-[0.875rem] text-low">
                   {s.count} {s.count === 1 ? "call" : "calls"}
                 </span>
               </button>

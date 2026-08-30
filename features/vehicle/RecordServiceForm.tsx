@@ -65,7 +65,7 @@ export function RecordServiceForm({
             ? // A quiet control: repeated once per item, a boxed button turns a
               // card into a column of boxes. min-h keeps the touch target
               // usable on a phone even though the box is gone.
-              "inline-flex min-h-6 items-center rounded text-[0.6875rem] font-medium text-low underline-offset-4 transition-colors hover:text-accent hover:underline"
+              "inline-flex min-h-6 items-center rounded text-[0.875rem] font-medium text-low underline-offset-4 transition-colors hover:text-accent hover:underline"
             : "rounded border border-line bg-raised px-2.5 py-1.5 text-xs font-medium text-hi transition-colors hover:border-accent hover:text-accent"
         }
       >
@@ -195,11 +195,11 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1 block text-[0.6875rem] font-medium text-mid">
+      <label htmlFor={htmlFor} className="mb-1 block text-[0.875rem] font-medium text-mid">
         {label}
       </label>
       {children}
-      {hint && <p className="mt-1 text-[0.6875rem] text-low">{hint}</p>}
+      {hint && <p className="mt-1 text-[0.875rem] text-low">{hint}</p>}
     </div>
   );
 }

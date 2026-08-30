@@ -63,7 +63,7 @@ export function OdometerForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="reading-date" className="mb-1 block text-[0.6875rem] font-medium text-mid">
+          <label htmlFor="reading-date" className="mb-1 block text-[0.875rem] font-medium text-mid">
             Date
           </label>
           <input
@@ -76,11 +76,11 @@ export function OdometerForm({
             className="nums w-full rounded border border-line bg-surface px-2 py-1.5 text-xs text-hi"
           />
           {lastReadingDate && (
-            <p className="mt-1 text-[0.6875rem] text-low">Last reading {lastReadingDate}</p>
+            <p className="mt-1 text-[0.875rem] text-low">Last reading {lastReadingDate}</p>
           )}
         </div>
         <div>
-          <label htmlFor="reading-km" className="mb-1 block text-[0.6875rem] font-medium text-mid">
+          <label htmlFor="reading-km" className="mb-1 block text-[0.875rem] font-medium text-mid">
             Odometer (km)
           </label>
           <input
@@ -93,7 +93,7 @@ export function OdometerForm({
             className="nums w-full rounded border border-line bg-surface px-2 py-1.5 text-xs text-hi"
           />
           {currentKm !== null && (
-            <p className="mt-1 text-[0.6875rem] text-low">
+            <p className="mt-1 text-[0.875rem] text-low">
               Must be at least {currentKm.toLocaleString("en-US")} km
             </p>
           )}

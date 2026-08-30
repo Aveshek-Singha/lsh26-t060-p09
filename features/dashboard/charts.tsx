@@ -122,7 +122,7 @@ export function ColumnChart({
             {/* min-h-0 lets this shrink inside the column; without it the
                 track refuses to give ground to the labels below. */}
             <div className="flex min-h-0 flex-1 flex-col justify-end">
-              <span className="nums mb-1 text-center text-[0.6875rem] font-semibold text-hi">
+              <span className="nums mb-1 text-center text-[0.875rem] font-semibold text-hi">
                 {c.value}
               </span>
               <div
@@ -133,7 +133,7 @@ export function ColumnChart({
                 }`}
               />
             </div>
-            <span className="nums w-full truncate border-t border-line pt-1.5 text-center text-[0.625rem] text-low">
+            <span className="nums w-full truncate border-t border-line pt-1.5 text-center text-[0.8125rem] text-low">
               {c.label}
             </span>
           </div>

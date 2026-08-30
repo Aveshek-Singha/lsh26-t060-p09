@@ -34,14 +34,14 @@ export function CalledToggle({ ownerId, called }: { ownerId: string; called: boo
         disabled={pending}
         className={
           called
-            ? "rounded border border-line px-2 py-1 text-[0.6875rem] font-medium text-mid transition-colors hover:text-hi disabled:opacity-60"
-            : "rounded border border-line bg-raised px-2 py-1 text-[0.6875rem] font-medium text-hi transition-colors hover:border-accent hover:text-accent disabled:opacity-60"
+            ? "rounded border border-line px-2 py-1 text-[0.875rem] font-medium text-mid transition-colors hover:text-hi disabled:opacity-60"
+            : "rounded border border-line bg-raised px-2 py-1 text-[0.875rem] font-medium text-hi transition-colors hover:border-accent hover:text-accent disabled:opacity-60"
         }
       >
         {pending ? "Saving…" : called ? "Undo" : "Mark called"}
       </button>
       {state && !state.ok && (
-        <p role="alert" className="enter mt-1 text-[0.6875rem] text-overdue">
+        <p role="alert" className="enter mt-1 text-[0.875rem] text-overdue">
           {state.message}
         </p>
       )}

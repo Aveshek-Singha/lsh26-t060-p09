@@ -72,7 +72,7 @@ export function CallRow({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             {called ? (
-              <span className="inline-flex shrink-0 items-center rounded border border-fine/30 bg-fine-bg px-1.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-fine">
+              <span className="inline-flex shrink-0 items-center rounded border border-fine/30 bg-fine-bg px-1.5 py-0.5 text-[0.875rem] font-semibold uppercase tracking-wide text-fine">
                 Called today
               </span>
             ) : (
@@ -115,7 +115,7 @@ export function CallRow({
                   >
                     {vehicle.plate}
                   </Link>
-                  <span className="truncate text-[0.6875rem] text-low">{vehicle.model}</span>
+                  <span className="truncate text-[0.875rem] text-low">{vehicle.model}</span>
                 </div>
 
                 <ul className="mt-1.5 space-y-2">
@@ -186,10 +186,10 @@ export function CallRow({
           </div>
           <div className="sm:mt-2">
             <p className="nums text-xs text-mid">{formatBdt(priority.totalCostPaisa)} of work</p>
-            <p className="nums mt-0.5 text-[0.6875rem] text-low">
+            <p className="nums mt-0.5 text-[0.875rem] text-low">
               {priority.urgencyPoints} urgency + {priority.valuePoints} value
             </p>
-            <p className="nums mt-0.5 text-[0.6875rem] text-low">
+            <p className="nums mt-0.5 text-[0.875rem] text-low">
               {actionable.length} {actionable.length === 1 ? "item" : "items"}
             </p>
             {owner && (

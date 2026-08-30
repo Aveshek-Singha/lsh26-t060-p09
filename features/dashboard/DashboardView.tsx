@@ -270,7 +270,10 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rise rounded border border-line bg-surface p-4">
+    // min-w-0: a grid item defaults to min-width:auto and will not shrink below
+    // its content, so the chart inside pushed the panel past the viewport on a
+    // phone. Same trap as min-h-0 in a flex column.
+    <section className="rise min-w-0 rounded border border-line bg-surface p-4">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-hi">{title}</h2>
         {note && <p className="text-xs text-low">{note}</p>}
@@ -341,7 +344,7 @@ function Th({ children, align }: { children?: React.ReactNode; align?: "right" }
   return (
     <th
       scope="col"
-      className={`px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-low ${
+      className={`px-3 py-2 text-[0.875rem] font-semibold uppercase tracking-wide text-low ${
         align === "right" ? "text-right" : ""
       }`}
     >
