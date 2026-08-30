@@ -202,7 +202,10 @@ time, and `setMonth` overflows 31 Jan + 1 month into March.
 
 ## Live URL
 
-_Not yet deployed._
+**https://lsh26-t060-p09.vercel.app**
+
+Opens on the call list with the fleet already seeded — no setup, no login.
+`https://lsh26-t060-p09.vercel.app/api/health` reports what the running instance can see.
 
 ## Testing
 
